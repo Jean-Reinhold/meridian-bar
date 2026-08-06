@@ -1,55 +1,84 @@
 # MeridianBar
 
-A native macOS menu bar app that shows Claude usage for **every account** managed by
-[Meridian](https://github.com/rynfar/meridian) — at a glance, without clicking.
+A native macOS menu bar app that watches **every Claude account** managed by
+[Meridian](https://github.com/rynfar/meridian) — quota pressure per account,
+always visible, and a live answer to "is the proxy even up?".
 
 ```
 ┌──────────────────────────────────────────────┐
-│  … 🌐 ⌁ paul 91 · pnr 52 · rein 32   ⏰ 14:32 │   ← menu bar: one segment per account,
-└──────────────────────────────────────────────┘      colored by quota pressure
+│  … 🌐 ⌁ paul 100 · pnr 100 · rein 34  ⏰ 14:32│   ← one segment per account:
+└──────────────────────────────────────────────┘      7d Fable %, colored by
+                                                      the worst quota window
 ```
 
-Meridian multiplexes several Claude Max accounts behind one local endpoint. What it
-doesn't give you is ambient awareness: which account is close to a rate-limit window,
-which one is exhausted, and when the windows reset. MeridianBar puts that in the menu
-bar — per-account, identified, always visible.
+Meridian multiplexes several Claude Max accounts behind one local endpoint.
+What it doesn't give you is ambient awareness: which account is about to hit
+a rate-limit window, which one is exhausted, when the windows reset — and
+whether Meridian itself is running. MeridianBar puts all of that in the menu
+bar, per account, identified by name.
 
-## Features
+## Install
 
-- **All accounts in the bar** — one compact segment per profile (auto-abbreviated
-  name + worst-window utilization), colored green/yellow/red with Meridian's own
-  thresholds. No click needed to know where you stand.
-- **Per-account detail on click** — every quota window (5h, 7d, 7d Fable, …) as a
-  bar with percentage and reset countdown; email, plan, active/exhausted badges.
-- **Switch profiles** from the dropdown (`POST /profiles/active`).
-- **Zero dependencies, native SwiftUI** — a single `LSUIElement` agent app; idle
-  footprint in the tens of MB, no Electron, no webview, no runtime.
-- **Offline-graceful** — Meridian down? Last data stays visible, grayed, with an
-  offline marker. The app never nags and never crashes on a dead socket.
+```bash
+curl -fsSL https://raw.githubusercontent.com/Jean-Reinhold/meridian-bar/main/install.sh | bash
+```
 
-## Status
+That's it — the script fetches the latest release, verifies its sha256,
+installs to `/Applications`, and launches the app. Other options:
 
-Planning/early development. The design and full feature plan live in
-[`okf/`](okf/README.md) — the project's knowledge base (verified Meridian API
-surface, product spec, stack decision, architecture, feature inventory, release
-plan).
+```bash
+# Build and install from source (needs Command Line Tools, no Xcode)
+curl -fsSL https://raw.githubusercontent.com/Jean-Reinhold/meridian-bar/main/install.sh | bash -s -- --from-source
+
+# Remove it again
+curl -fsSL https://raw.githubusercontent.com/Jean-Reinhold/meridian-bar/main/install.sh | bash -s -- --uninstall
+
+# Or, from a clone
+make install
+```
+
+> MeridianBar is ad-hoc signed, not Apple-notarized — a deliberate project
+> decision (see [`okf/06`](okf/06-release.md)). Integrity comes from the
+> published sha256, which the installer verifies. Homebrew cask and Sparkle
+> in-app updates (stable/beta channels) are on the roadmap.
+
+## What you see
+
+- **In the bar** — one compact segment per profile: auto-abbreviated name +
+  **7d Fable** utilization (the binding constraint for Fable-tier usage),
+  colored by the *worst* window so it never looks green while something is
+  blocking. The active profile is underlined. Meridian down → a gray
+  `meridian ⏻` marker, within one poll.
+- **On click** — per-account cards: every quota window (5h, 7d, 7d Fable, …)
+  as a bar with percentage and reset countdown, email, plan, active /
+  exhausted / login-needed badges, extra-usage credits, and a health footer
+  with Meridian's version and data age.
+- **Switch accounts** from the dropdown — one click, routed through
+  `POST /profiles/active`.
+- **Native and light** — SwiftUI `MenuBarExtra`, no Electron, no webview;
+  an `LSUIElement` agent app idling in the tens of MB. Talks only to your
+  loopback Meridian endpoint; no other network access.
 
 ## Requirements
 
-- macOS 14+
-- [Meridian](https://github.com/rynfar/meridian) running locally (default
-  `127.0.0.1:3456`; configurable)
+- macOS 14+ (Liquid Glass look on macOS 26+, graceful material fallback below)
+- [Meridian](https://github.com/rynfar/meridian) running locally
+  (default `127.0.0.1:3456`, configurable)
 
-## Building
+## Developing
 
 ```bash
-make build     # swift build -c release + assemble MeridianBar.app
-make install   # copy to /Applications
+make build     # swift build -c release
+make app       # assemble dist/MeridianBar.app
+make run       # build + launch
 make test      # unit tests
 ```
 
-Builds with the plain Swift toolchain (Command Line Tools are enough; no Xcode
-project file).
+Plain Swift toolchain — Command Line Tools are enough; there is no Xcode
+project. The design, verified Meridian API surface, feature plan, and all
+decisions of record live in [`okf/`](okf/README.md). Contributions welcome —
+see [CONTRIBUTING](CONTRIBUTING.md); questions go to
+[Discussions](https://github.com/Jean-Reinhold/meridian-bar/discussions).
 
 ## License
 
