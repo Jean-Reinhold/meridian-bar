@@ -5,24 +5,36 @@ over older docs until those docs are revised.
 
 ## State
 
-- **Phase: M0 complete — public repo live, pre-implementation.**
-  OKF 01–06 written and internally consistent; no application code yet.
+- **Phase: M1+M2 implemented and smoke-tested live; CI landing.**
 - Published at <https://github.com/Jean-Reinhold/meridian-bar>
-  (2026-08-06). Repo settings applied: Discussions, secret scanning +
-  push protection, dependency alerts, private vulnerability reporting,
-  branch protection on `main` (PRs, no force push; owner bypass until CI
-  exists — add the CI-green requirement when `ci.yml` lands).
+  (2026-08-06). Repo settings: Discussions, secret scanning + push
+  protection, dependency alerts, private vulnerability reporting, branch
+  protection on `main` (PRs; owner bypass until CI-green is required).
 - Community files in place: CONTRIBUTING, SECURITY, Code of Conduct,
-  issue templates + Discussions routing, PR template (F16).
+  issue templates + Discussions routing, PR template, AGENTS.md (F16).
+- **M1+M2 smoke test PASSED (2026-08-06, live Meridian 1.60.0, 3
+  profiles):** bar label rendered `rein 59 · paul 100 · pnr 100` with
+  correct Fable-primary numbers, worst-window colors (red + underline on
+  the active, blocked `paul`), non-template color rendering confirmed
+  (risk R1 closed). Dropdown verified by owner screenshot: per-account
+  cards, per-window bars + countdowns, `blocked` flags, switch buttons,
+  health footer `Operational · Meridian 1.60.0`. Offline-path smoke test
+  (Meridian stopped) still pending.
 - Meridian surface verified live on 2026-08-06 against Meridian **1.60.0**
   (`okf/01`): `/v1/usage/quota/all`, `/profiles/list`, `/health`,
   `POST /profiles/active` all confirmed with real three-profile data.
-- Toolchain verified: Swift 6.3.2 via CommandLineTools (no full Xcode
-  selected), macOS 26.5.2, `gh` authenticated.
+- **Host toolchain quirk:** CLT 6.3.2 SwiftPM cannot compile *any*
+  package manifest (PackageDescription dylib/interface mismatch —
+  `swiftLanguageVersions` symbol missing at link). Even a trivial
+  manifest fails; cache purge doesn't help; no Xcode.app installed.
+  Workaround in-repo: `make build-direct` / `make app-direct` compile the
+  dependency-free sources with plain `swiftc`. `swift test` therefore
+  cannot run on this host — unit tests run in CI (macos-latest, full
+  Xcode). Fix path if wanted: reinstall CLT.
 
 ## Owner requirements of record
 
-Confirmed with the project owner in planning (2026-08-06):
+Confirmed with the project owner (2026-08-06):
 
 1. Collapsed bar label summarizes **all** accounts; per-account detail in
    the dropdown; profiles always identified by name (`okf/02` §1–2).
@@ -45,12 +57,14 @@ Confirmed with the project owner in planning (2026-08-06):
 
 ## Near-term queue (in order)
 
-1. **M1 — core**: Package.swift, client, store, logic, bar label with live
-   data (`okf/05`).
-2. **M2 — dropdown** per `okf/02` §2 + §5.
-3. CI (`ci.yml` + security workflows), then require CI-green in branch
-   protection.
-4. M3/M4 per `okf/05`.
+1. Push code + CI (`ci.yml`, CodeQL, Scorecard, dependency review);
+   confirm green; then require CI-green in branch protection.
+2. Offline-path smoke test (stop Meridian, watch the label degrade,
+   restart, watch it recover) — completes the M1 gate.
+3. **M3 — comfort**: settings window, label styles, launch-at-login,
+   notifications (`okf/05` F8–F11).
+4. **M4 — ship**: icon/polish, release workflow, `install.sh`, Homebrew
+   tap, Sparkle + channels (`okf/05` F12–F15, `okf/06`).
 
 ## Owner actions pending
 
@@ -59,9 +73,11 @@ Confirmed with the project owner in planning (2026-08-06):
 ## Risks being tracked
 
 - Meridian API drift between minors — mitigated by tolerant decoding +
-  fixtures (`okf/01` §stability, `okf/04` tests).
-- Colored non-template label rendering in the menu bar — validate first
-  thing in M1; fallback design documented (`okf/04` §4).
+  fixtures (`okf/01` §stability, tests in place).
+- ~~Colored non-template label rendering (R1)~~ — **closed**, verified
+  on-device 2026-08-06.
+- SwiftUI-under-CLT (R2) — direct `swiftc` compile verified working; the
+  SwiftPM manifest failure is a host-toolchain defect, tracked above.
 - Liquid Glass APIs are macOS 26+ — material fallback keeps min target at
   macOS 14 (`okf/02` §5).
 - Unsigned distribution vs Gatekeeper — routed around via installer
