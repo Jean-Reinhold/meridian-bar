@@ -5,8 +5,15 @@ over older docs until those docs are revised.
 
 ## State
 
-- **Phase: planning complete, pre-implementation.** OKF 01–06 written and
-  internally consistent; no application code yet.
+- **Phase: M0 complete — public repo live, pre-implementation.**
+  OKF 01–06 written and internally consistent; no application code yet.
+- Published at <https://github.com/Jean-Reinhold/meridian-bar>
+  (2026-08-06). Repo settings applied: Discussions, secret scanning +
+  push protection, dependency alerts, private vulnerability reporting,
+  branch protection on `main` (PRs, no force push; owner bypass until CI
+  exists — add the CI-green requirement when `ci.yml` lands).
+- Community files in place: CONTRIBUTING, SECURITY, Code of Conduct,
+  issue templates + Discussions routing, PR template (F16).
 - Meridian surface verified live on 2026-08-06 against Meridian **1.60.0**
   (`okf/01`): `/v1/usage/quota/all`, `/profiles/list`, `/health`,
   `POST /profiles/active` all confirmed with real three-profile data.
@@ -29,15 +36,12 @@ Confirmed with the project owner in planning (2026-08-06):
 
 ## Near-term queue (in order)
 
-1. Publish this repo public under `Jean-Reinhold` (done when a remote
-   exists and `main` is pushed).
-2. Repo settings pass: Discussions on, secret scanning + push protection,
-   branch protection on `main` once CI exists.
-3. **M1 — core**: Package.swift, client, store, logic, bar label with live
+1. **M1 — core**: Package.swift, client, store, logic, bar label with live
    data (`okf/05`).
-4. **M2 — dropdown** per `okf/02` §2 + §5.
-5. Community + CI files (`.github/`, CONTRIBUTING, SECURITY, templates).
-6. M3/M4 per `okf/05`.
+2. **M2 — dropdown** per `okf/02` §2 + §5.
+3. CI (`ci.yml` + security workflows), then require CI-green in branch
+   protection.
+4. M3/M4 per `okf/05`.
 
 ## Owner actions pending
 
