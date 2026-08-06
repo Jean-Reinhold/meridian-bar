@@ -1,0 +1,39 @@
+name: Bug report
+description: Something broken in MeridianBar
+labels: [bug]
+body:
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.5"
+    validations:
+      required: true
+  - type: input
+    id: meridian
+    attributes:
+      label: Meridian version
+      description: From `curl -s http://127.0.0.1:3456/health` ("version" field) or the dropdown footer.
+      placeholder: "1.60.0"
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: MeridianBar version
+      description: About panel, or `CFBundleShortVersionString` in the bundle.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw vs what you expected. Screenshots help — please redact account emails.
+    validations:
+      required: true
+  - type: textarea
+    id: health
+    attributes:
+      label: Health output
+      description: Output of `curl -s http://127.0.0.1:3456/health` with email redacted.
+      render: json

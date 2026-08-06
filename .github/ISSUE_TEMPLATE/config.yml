@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / help
+    url: https://github.com/Jean-Reinhold/meridian-bar/discussions
+    about: Ask questions in Discussions — the issue tracker is for actionable bugs and features.
+  - name: Meridian itself
+    url: https://github.com/rynfar/meridian/issues
+    about: Problems with the proxy (auth, quotas, adapters) belong upstream.
