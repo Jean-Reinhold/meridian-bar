@@ -96,6 +96,11 @@ struct UsageMenuView: View {
                 Button("Dashboard") {
                     NSWorkspace.shared.open(MeridianClient.configured().baseURL)
                 }
+                SettingsLink { Text("Settings…") }
+                Button("About") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    NSApp.orderFrontStandardAboutPanel(nil)
+                }
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
             }

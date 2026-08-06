@@ -14,8 +14,14 @@ struct MeridianBarApp: App {
         MenuBarExtra {
             UsageMenuView(store: store)
         } label: {
-            Image(nsImage: MenuBarLabel.render(segments: store.segments, offline: store.offline))
+            Image(nsImage: MenuBarLabel.render(
+                segments: store.segments, offline: store.offline, style: store.labelStyle
+            ))
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(store: store)
+        }
     }
 }

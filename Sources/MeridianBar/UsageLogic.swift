@@ -119,7 +119,8 @@ enum UsageLogic {
     static func segments(
         quota: QuotaAll?,
         profiles: ProfilesList?,
-        primaryWindow: String = defaultPrimaryWindow
+        primaryWindow: String = defaultPrimaryWindow,
+        aliasOverrides: [String: String] = [:]
     ) -> [ProfileSegment] {
         let quotaById = Dictionary(
             uniqueKeysWithValues: (quota?.profiles ?? []).map { ($0.id, $0) }
@@ -128,7 +129,9 @@ enum UsageLogic {
         let order = (profiles?.profileOrder ?? []).filter { listed.contains($0) || quotaById[$0] != nil }
         var ids = order.isEmpty ? (listed.isEmpty ? Array(quotaById.keys).sorted() : listed) : order
         for id in listed where !ids.contains(id) { ids.append(id) }
-        let aliasMap = aliases(for: ids)
+        let aliasMap = aliases(for: ids).merging(
+            aliasOverrides.filter { !$0.value.isEmpty }
+        ) { _, override in override }
         let exhausted = Set(profiles?.exhausted ?? [])
         let active = profiles?.activeProfile
 
@@ -148,4 +151,52 @@ enum UsageLogic {
             )
         }
     }
+
+    /// Flat "profileId|windowType" → status map for notification diffing.
+    static func statuses(quota: QuotaAll?) -> [String: UsageStatus] {
+        var out: [String: UsageStatus] = [:]
+        for p in quota?.profiles ?? [] {
+            for w in p.windows ?? [] {
+                out["\(p.id)|\(w.type)"] = status(utilization: w.utilization)
+            }
+        }
+        return out
+    }
+
+    /// Transitions worth a user notification (F11): escalations into
+    /// warn/critical/blocked, and recovery out of blocked. Keys absent on
+    /// either side are ignored — no startup or profile-add spam.
+    static func transitions(
+        from old: [String: UsageStatus], to new: [String: UsageStatus]
+    ) -> [UsageTransition] {
+        var out: [UsageTransition] = []
+        for (key, to) in new {
+            guard let from = old[key], from != to else { continue }
+            let parts = key.split(separator: "|", maxSplits: 1)
+            guard parts.count == 2 else { continue }
+            let escalated = to > from && to >= .warn
+            let recovered = from == .blocked && to <= .warn
+            if escalated || recovered {
+                out.append(UsageTransition(
+                    profileId: String(parts[0]), windowType: String(parts[1]),
+                    from: from, to: to
+                ))
+            }
+        }
+        return out.sorted { ($0.profileId, $0.windowType) < ($1.profileId, $1.windowType) }
+    }
+}
+
+struct UsageTransition: Equatable, Sendable {
+    var profileId: String
+    var windowType: String
+    var from: UsageStatus
+    var to: UsageStatus
+}
+
+/// Collapsed-label rendering styles (okf/02 §1, F9).
+enum LabelStyle: String, CaseIterable, Sendable {
+    case segments
+    case dots
+    case worst
 }

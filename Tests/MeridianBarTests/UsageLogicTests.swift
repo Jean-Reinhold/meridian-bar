@@ -165,3 +165,73 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
         #expect(segs.allSatisfy { $0.percent == nil && $0.status == .ok })
     }
 }
+
+@Suite struct Transitions {
+    private func t(_ pairs: [(String, UsageStatus, UsageStatus)]) -> [UsageTransition] {
+        var old: [String: UsageStatus] = [:]
+        var new: [String: UsageStatus] = [:]
+        for (key, from, to) in pairs {
+            old[key] = from
+            new[key] = to
+        }
+        return UsageLogic.transitions(from: old, to: new)
+    }
+
+    @Test func escalationsFire() {
+        let out = t([("p|seven_day", .ok, .critical), ("p|five_hour", .warn, .blocked)])
+        #expect(out.count == 2)
+    }
+
+    @Test func recoveryFromBlockedFires() {
+        let out = t([("p|seven_day_fable", .blocked, .ok)])
+        #expect(
+            out == [
+                UsageTransition(
+                    profileId: "p", windowType: "seven_day_fable", from: .blocked, to: .ok)
+            ])
+    }
+
+    @Test func noiseDoesNotFire() {
+        // Unchanged, de-escalation short of recovery, and keys with no history.
+        #expect(t([("p|a", .warn, .warn)]).isEmpty)
+        #expect(t([("p|a", .critical, .warn)]).isEmpty)
+        #expect(t([("p|a", .blocked, .critical)]).isEmpty)
+        #expect(UsageLogic.transitions(from: [:], to: ["p|a": .blocked]).isEmpty)
+    }
+
+    @Test func messages() {
+        #expect(
+            UsageNotifier.message(
+                for: .init(profileId: "p", windowType: "seven_day_fable", from: .critical, to: .blocked)
+            ).contains("exhausted"))
+        #expect(
+            UsageNotifier.message(
+                for: .init(profileId: "p", windowType: "seven_day_fable", from: .blocked, to: .ok)
+            ).contains("usable again"))
+    }
+}
+
+@Suite struct AliasOverrides {
+    @Test func overrideWinsAndEmptyIsIgnored() throws {
+        let (quota, profiles) = try decodeFixtures()
+        let segs = UsageLogic.segments(
+            quota: quota, profiles: profiles,
+            aliasOverrides: ["jeanpaul": "work", "jeanpnr": ""]
+        )
+        let byId = Dictionary(uniqueKeysWithValues: segs.map { ($0.id, $0.alias) })
+        #expect(byId["jeanpaul"] == "work")
+        #expect(byId["jeanpnr"] == "pnr")
+    }
+}
+
+@Suite struct LabelStyles {
+    @Test func dotsAndWorst() throws {
+        let (quota, profiles) = try decodeFixtures()
+        let segs = UsageLogic.segments(quota: quota, profiles: profiles)
+        let dots = MenuBarLabel.attributedText(segments: segs, offline: false, style: .dots)
+        #expect(dots.string == "● ● ●")
+        // Worst = the binding constraint across accounts: first blocked profile.
+        let worst = MenuBarLabel.attributedText(segments: segs, offline: false, style: .worst)
+        #expect(worst.string == "paul 100")
+    }
+}

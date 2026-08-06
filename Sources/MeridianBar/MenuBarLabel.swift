@@ -7,8 +7,10 @@ enum MenuBarLabel {
     static let fontSize: CGFloat = 12
     static let barHeight: CGFloat = 22
 
-    static func render(segments: [ProfileSegment], offline: Bool) -> NSImage {
-        let text = attributedText(segments: segments, offline: offline)
+    static func render(
+        segments: [ProfileSegment], offline: Bool, style: LabelStyle = .segments
+    ) -> NSImage {
+        let text = attributedText(segments: segments, offline: offline, style: style)
         let size = text.size()
         let image = NSImage(
             size: NSSize(width: ceil(size.width), height: barHeight),
@@ -21,7 +23,9 @@ enum MenuBarLabel {
         return image
     }
 
-    static func attributedText(segments: [ProfileSegment], offline: Bool) -> NSAttributedString {
+    static func attributedText(
+        segments: [ProfileSegment], offline: Bool, style: LabelStyle = .segments
+    ) -> NSAttributedString {
         let font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium)
         let boldFont = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .bold)
 
@@ -30,6 +34,30 @@ enum MenuBarLabel {
                 string: offline ? "meridian ⏻" : "meridian …",
                 attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
             )
+        }
+
+        switch style {
+        case .segments:
+            break
+        case .dots:
+            let out = NSMutableAttributedString()
+            for (i, seg) in segments.enumerated() {
+                if i > 0 { out.append(NSAttributedString(string: " ", attributes: [.font: font])) }
+                out.append(NSAttributedString(string: "●", attributes: [
+                    .font: seg.isActive ? boldFont : font,
+                    .foregroundColor: color(for: seg.status),
+                ]))
+            }
+            return out
+        case .worst:
+            // The single binding constraint across every account.
+            let worst = segments.max {
+                ($0.status, $0.percent ?? -1) < ($1.status, $1.percent ?? -1)
+            }!
+            let number = worst.percent.map(String.init) ?? "–"
+            return NSAttributedString(string: "\(worst.alias) \(number)", attributes: [
+                .font: boldFont, .foregroundColor: color(for: worst.status),
+            ])
         }
 
         let out = NSMutableAttributedString()

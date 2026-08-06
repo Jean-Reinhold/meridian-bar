@@ -17,6 +17,7 @@ final class UsageStore {
 
     private var misses = 0
     private var pollTask: Task<Void, Never>?
+    private let notifier = UsageNotifier()
 
     var pollInterval: TimeInterval {
         let v = UserDefaults.standard.double(forKey: "pollInterval")
@@ -28,8 +29,20 @@ final class UsageStore {
             ?? UsageLogic.defaultPrimaryWindow
     }
 
+    var labelStyle: LabelStyle {
+        LabelStyle(rawValue: UserDefaults.standard.string(forKey: "labelStyle") ?? "") ?? .segments
+    }
+
+    static func aliasOverrides() -> [String: String] {
+        (UserDefaults.standard.dictionary(forKey: "aliasOverrides") ?? [:])
+            .compactMapValues { $0 as? String }
+    }
+
     var segments: [ProfileSegment] {
-        UsageLogic.segments(quota: quota, profiles: profiles, primaryWindow: primaryWindow)
+        UsageLogic.segments(
+            quota: quota, profiles: profiles,
+            primaryWindow: primaryWindow, aliasOverrides: Self.aliasOverrides()
+        )
     }
 
     func start() {
@@ -60,6 +73,7 @@ final class UsageStore {
             lastSuccess = Date()
             misses = 0
             offline = false
+            notifier.process(quota: q)
         } catch {
             misses += 1
             if misses >= 2 { offline = true }
