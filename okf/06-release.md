@@ -2,9 +2,11 @@
 
 How the public repo stays professional, how builds are produced, how a
 stranger installs — and stays current with — the app, and how they ask
-questions or contribute. Requirements set by the project owner: **security
-CI scans, proper (CI-built, verifiable) builds, easy installs, easy updates
-with update channels, and a real contribution pathway.**
+questions or contribute. Owner requirements of record: **security CI
+scans, proper (CI-built, verifiable) builds, easy installs (bash
+one-liner first), easy updates with update channels, a real contribution
+pathway, and — decided 2026-08-06 — no Apple affiliation of any kind:
+no Developer Program, no signing certificates, no notarization.**
 
 ## Repo hygiene
 
@@ -17,106 +19,98 @@ with update channels, and a real contribution pathway.**
   kept from v0.1.0 on ([Keep a Changelog](https://keepachangelog.com) form).
 - `SECURITY.md` with a private-report channel (GitHub security advisories).
 
-## Contribution pathway — launch scope
+## Contribution pathway — shipped in M0
 
-People must be able to ask questions and open PRs from day one:
-
-- **`CONTRIBUTING.md`**: dev setup (`make build` needs only
-  CommandLineTools), project map (point at the OKF), test expectations
-  (`make test` green, new logic in `UsageLogic` gets a test), commit
-  convention, and the review promise (small PRs reviewed fast; open an
-  issue first for anything larger than a fix).
-- **Issue templates** (`.github/ISSUE_TEMPLATE/`): `bug_report.yml` (asks
-  for macOS + Meridian versions and `curl /health` output), and
-  `feature_request.yml`. `config.yml` routes questions to Discussions
-  instead of issues.
-- **PR template**: what/why, screenshot for UI changes, checklist (tests
-  pass, CHANGELOG entry, no personal data in fixtures/screenshots).
-- **GitHub Discussions** enabled — the "ask" channel (Q&A + Ideas
-  categories), keeping the issue tracker actionable.
-- **Code of Conduct**: Contributor Covenant, stock.
-- **Labels**: `good first issue` and `help wanted` seeded from the feature
-  backlog (`okf/05`) so newcomers have an entry point.
-- Branch protection on `main`: PRs only, CI green required.
+- `CONTRIBUTING.md`, issue forms (`bug_report.yml`, `feature_request.yml`),
+  Discussions routing (`config.yml`), PR template with checklist,
+  Contributor Covenant, `SECURITY.md`.
+- GitHub Discussions enabled; secret scanning + push protection,
+  dependency alerts, private vulnerability reporting enabled.
+- Branch protection on `main`: PRs required (owner bypass allowed until CI
+  exists; CI-green becomes required once `ci.yml` lands).
+- Labels `good first issue` / `help wanted` seeded from the backlog as
+  issues get filed.
 
 ## Security CI
 
 - **CodeQL** (`github/codeql-action`, Swift language pack) on push, PR, and
   a weekly schedule — static analysis of the app code.
-- **Secret scanning + push protection** enabled on the repo (GitHub-side
-  setting, free for public repos).
 - **Dependency review action** on PRs. The package graph is near-empty by
   design (`okf/03`); this guards the future — any PR that introduces a
   dependency gets its advisories surfaced in review.
 - **Actions supply chain:** all workflow actions pinned to full commit SHAs,
   `permissions:` blocks scoped read-only by default, release workflow the
   only one with `contents: write`.
-- **OpenSSF Scorecard** workflow + badge once the repo is public — cheap,
-  and it audits the settings above continuously.
+- **OpenSSF Scorecard** workflow + badge — cheap, audits the repo settings
+  continuously.
 
 ## Proper builds
 
 - **Releases are built by CI only** — never from a laptop. `release.yml`
-  triggers on tag `v*`: build, test, assemble, sign, notarize, staple, zip,
-  attach to a GitHub Release with generated notes, update the appcast and
-  the Homebrew tap.
+  triggers on tag `v*`: build, test, assemble the bundle, **ad-hoc sign**
+  (`codesign -s -` — a stable identity for Sparkle delta/validation
+  purposes, not an Apple identity), zip, attach to a GitHub Release with
+  generated notes, update the appcasts and the Homebrew tap.
 - **Universal binary**: `swift build -c release` for `arm64` + `x86_64`,
   `lipo` into one executable, so Intel Macs are covered.
 - **Version stamping**: `CFBundleShortVersionString` injected from the git
   tag at bundle assembly — the binary always knows what release it is.
 - **Checksums**: `shasum -a 256` of the zip published in the release notes;
-  the Homebrew cask pins the same hash.
+  the installer script and the Homebrew cask pin/verify the same hash.
 - `ci.yml`: on push/PR — release-config build + tests on `macos-latest`.
-  The runner ships full Xcode, so CI also guards against "works only with
-  CommandLineTools quirks" drift (`okf/03` risk).
 
-## Signing & notarization — required, not optional
+## No Apple affiliation — consequences, owned deliberately
 
-Easy installs and in-app updates make this launch scope: an unsigned app
-means Gatekeeper warnings or `--no-quarantine` workarounds, and Sparkle
-updates require a stable signing identity across versions.
+Unsigned (ad-hoc) apps are quarantined by Gatekeeper when downloaded via a
+browser. We route around it honestly instead of paying Apple:
 
-- Developer ID Application certificate + `codesign --options runtime`
-  (hardened runtime), then `notarytool submit --wait` and `stapler` in
-  `release.yml`. Cert/keys live in GitHub Actions secrets.
-- **Owner prerequisite:** an Apple Developer Program membership
-  (US$99/yr) to issue the Developer ID cert. Until it exists, releases
-  ship unsigned with a README caveat and the cask carries
-  `--no-quarantine` guidance — explicitly marked temporary.
+- The **bash installer** downloads with `curl` and strips the quarantine
+  attribute (`xattr -dr com.apple.quarantine`) after verifying the sha256
+  against the release notes — the user runs one command and the app opens.
+- The **Homebrew cask** ships `--no-quarantine` guidance in its caveats.
+- The README states plainly: *this app is not signed with an Apple
+  certificate; install via the script, brew, or build from source — the
+  integrity check is the published sha256 + Sparkle's EdDSA, not
+  Gatekeeper.*
+- Sparkle 2 handles unsigned bundles: update integrity comes from the
+  **EdDSA-signed appcast** (key in GitHub Actions secrets, public key in
+  `Info.plist`); Sparkle requires only that the signing state (ad-hoc)
+  stays consistent across versions — CI guarantees that.
 
 ## Easy installs
 
 Priority order for someone who finds the repo:
 
-1. **Homebrew cask** (primary): `brew install --cask jean-reinhold/tap/meridian-bar`
-   via a `homebrew-tap` repo under the same account. Cask formula updated by
-   `release.yml` (commit to the tap with the new version + sha256); marked
-   `auto_updates true` once Sparkle ships so brew doesn't fight the in-app
-   updater. Submission to `homebrew/cask` mainline once the app has
-   users/stars — mainline has notability requirements a day-one project
-   doesn't meet.
-2. **Release zip**: notarized `MeridianBar.app` — download, unzip, drag to
-   `/Applications`. Linked prominently in the README.
+1. **Bash one-liner** (primary, owner requirement):
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/Jean-Reinhold/meridian-bar/main/install.sh | bash
+   ```
+
+   `install.sh` (versioned in-repo, reviewable): resolves the latest
+   GitHub Release via the API, downloads the zip, **verifies sha256**,
+   installs to `/Applications` (or `~/Applications` without sudo), strips
+   quarantine, launches the app. Flags: `--version vX.Y.Z`,
+   `--from-source` (clone + `make install`, needs CLT), `--uninstall`.
+   No sudo unless `/Applications` needs it; never touches anything outside
+   the app bundle and its own defaults domain.
+2. **Homebrew cask**: `brew install --cask jean-reinhold/tap/meridian-bar`
+   via a `homebrew-tap` repo; formula auto-bumped by `release.yml`,
+   `auto_updates true` once Sparkle ships.
 3. **From source**: `git clone && make install` for developers.
 
 ## Easy updates & channels
 
 - **In-app updates via [Sparkle 2](https://sparkle-project.org)** — the
-  macOS standard: background check, one-click install, EdDSA-signed
-  payloads on top of notarization. Sparkle is the **single sanctioned
-  exception** to the no-dependency rule (`okf/03`): update plumbing is
-  exactly the code you don't hand-roll, for security reasons.
+  single sanctioned dependency (`okf/03`): background check, one-click
+  install, EdDSA-signed payloads. No Apple involvement required.
 - **Channels:** `stable` and `beta`. GitHub Releases is the source of
   truth — a pre-release tag (`v0.3.0-beta.1`) publishes only to the beta
   appcast; a full release publishes to both. Two `appcast.xml` files
-  generated by `release.yml` (Sparkle's `generate_appcast`) and hosted on
-  GitHub Pages of this repo. Channel selection is a Settings toggle
-  (default: stable).
-- **Fallbacks:** cask users can always `brew upgrade --cask meridian-bar`;
-  zip users get Sparkle like everyone else. A "Check for updates…" menu
-  item triggers Sparkle manually.
-- The Sparkle EdDSA private key lives in GitHub Actions secrets alongside
-  the signing cert; the public key ships in `Info.plist`.
+  generated by `release.yml` (Sparkle's `generate_appcast`), hosted on
+  GitHub Pages. Channel selection is a Settings toggle (default: stable).
+- **Fallbacks:** `brew upgrade --cask`, re-running the install one-liner
+  (idempotent), or the "Check for updates…" menu item.
 
 ## Versioning
 

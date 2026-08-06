@@ -28,11 +28,20 @@ Confirmed with the project owner in planning (2026-08-06):
    the dropdown; profiles always identified by name (`okf/02` §1–2).
 2. Docs live in this OKF; all features planned up front (`okf/05`).
 3. Security CI scans; CI-built verifiable releases (`okf/06`).
-4. Easy installs for strangers (cask + notarized zip) (`okf/06`).
+4. Easy installs for strangers — bash one-liner installer first, then
+   cask and source (`okf/06`).
 5. Easy updates with stable/beta channels (Sparkle 2) (`okf/06`).
 6. Contribution pathway: Discussions, issue/PR templates, CONTRIBUTING
    (`okf/06`).
 7. Visual design: Liquid Glass / native Apple (`okf/02` §5).
+8. **7d Fable quota is the primary number** — leads the bar label and any
+   single-number view; color still tracks the worst window (`okf/02` §1).
+9. **No Apple affiliation, ever** — no Developer Program, no signing
+   certs, no notarization; ad-hoc signing + sha256 + Sparkle EdDSA
+   (`okf/06`). Decision is final; do not re-raise.
+10. The app doubles as the **Meridian uptime monitor** (`okf/02` intro,
+    §2.4) and is deployed now — implementation takes priority over
+    further planning.
 
 ## Near-term queue (in order)
 
@@ -45,9 +54,7 @@ Confirmed with the project owner in planning (2026-08-06):
 
 ## Owner actions pending
 
-- Decide on Apple Developer Program membership (US$99/yr) — gates
-  signing/notarization, which gates frictionless installs and Sparkle
-  (`okf/06`). Until then: unsigned releases with README caveat.
+- None.
 
 ## Risks being tracked
 
@@ -57,3 +64,6 @@ Confirmed with the project owner in planning (2026-08-06):
   thing in M1; fallback design documented (`okf/04` §4).
 - Liquid Glass APIs are macOS 26+ — material fallback keeps min target at
   macOS 14 (`okf/02` §5).
+- Unsigned distribution vs Gatekeeper — routed around via installer
+  quarantine strip + cask caveats; integrity = sha256 + Sparkle EdDSA
+  (`okf/06`).

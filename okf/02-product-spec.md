@@ -3,7 +3,11 @@
 What MeridianBar shows and how it behaves. The design premise, confirmed
 with the primary user: **the collapsed menu bar item summarizes all
 accounts at once; the dropdown gives full per-account detail; profiles are
-always identified by name, never anonymous.**
+always identified by name, never anonymous.** Two later owner decisions
+(2026-08-06): the **7d Fable window is the number that matters most** —
+it leads everywhere a single number is shown — and the app doubles as the
+**Meridian uptime monitor**: the bar must answer "is the proxy up?" at a
+glance, at all times.
 
 ## 1. Menu bar label (collapsed state)
 
@@ -16,10 +20,15 @@ paul 91 · pnr 52 · rein 32
 - **Identifier** — a short alias derived from the profile id (see
   `04-architecture.md` §3). Falls back to the raw id truncated to 4 chars.
   User-overridable per profile in Settings.
-- **Number** — the profile's **worst utilization** across all its quota
-  windows, as an integer percent. Worst-of is the right scalar: the binding
-  constraint is what blocks a request, regardless of which window it is.
-- **Color** — per segment, using Meridian's own thresholds so both UIs
+- **Number** — the profile's **primary window** utilization as an integer
+  percent. Primary window defaults to `seven_day_fable` (owner decision:
+  the Fable quota is the binding constraint that matters); configurable in
+  Settings (F10). Profiles without the primary window fall back to their
+  **worst** window. The dropdown always shows every window regardless.
+- **Color** — always driven by the profile's **worst** window, never just
+  the primary: the label may *show* Fable, but it must never look green
+  while another window is blocking requests.
+- **Thresholds** — Meridian's own, so both UIs
   agree: normal < 60% (primary label color), warn ≥ 60% (yellow),
   critical ≥ 85% (red). A profile listed in `exhausted[]` or with any
   `rejected` window renders red regardless of the number.
