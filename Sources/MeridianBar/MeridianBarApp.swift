@@ -5,6 +5,7 @@ struct MeridianBarApp: App {
     @State private var store: UsageStore
 
     init() {
+        PreviewRenderer.runIfRequested()
         let store = UsageStore()
         store.start()
         _store = State(initialValue: store)

@@ -165,8 +165,7 @@ struct AccountCard: View {
                 Text(UsageLogic.windowLabel(w.type))
                     .font(.caption)
                     .frame(width: 64, alignment: .leading)
-                ProgressView(value: min(max(w.utilization ?? 0, 0), 1))
-                    .tint(Color(nsColor: MenuBarLabel.color(for: status)))
+                UsageBar(value: min(max(w.utilization ?? 0, 0), 1), status: status)
                 Text(UsageLogic.percent(w.utilization).map { "\($0)%" } ?? "–")
                     .font(.caption.monospacedDigit())
                     .frame(width: 38, alignment: .trailing)
@@ -190,11 +189,41 @@ struct AccountCard: View {
             let cur = eu.currency ?? "$"
             HStack(spacing: 8) {
                 Text("Extra").font(.caption).frame(width: 64, alignment: .leading)
-                ProgressView(value: min(max(eu.utilization ?? used / limit, 0), 1))
+                UsageBar(
+                    value: min(max(eu.utilization ?? used / limit, 0), 1),
+                    status: UsageLogic.status(utilization: eu.utilization ?? used / limit)
+                )
                 Text("\(cur)\(used, specifier: "%.2f") / \(cur)\(limit, specifier: "%.2f")")
                     .font(.caption2.monospacedDigit())
             }
         }
+    }
+}
+
+/// Pure-SwiftUI usage bar: Meridian's dashboard colors (green / yellow /
+/// red) and renders identically on screen and in offscreen snapshots
+/// (stock ProgressView is AppKit-bridged and drops its tint there).
+struct UsageBar: View {
+    let value: Double
+    let status: UsageStatus
+
+    private var color: Color {
+        switch status {
+        case .ok: Color(nsColor: .systemGreen)
+        case .warn: Color(nsColor: .systemYellow)
+        case .critical, .blocked: Color(nsColor: .systemRed)
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.14))
+                Capsule().fill(color).frame(width: max(geo.size.width * value, 4))
+            }
+        }
+        .frame(height: 4)
+        .frame(maxHeight: .infinity, alignment: .center)
     }
 }
 

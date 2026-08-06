@@ -4,12 +4,9 @@ A native macOS menu bar app that watches **every Claude account** managed by
 [Meridian](https://github.com/rynfar/meridian) — quota pressure per account,
 always visible, and a live answer to "is the proxy even up?".
 
-```
-┌──────────────────────────────────────────────┐
-│  … 🌐 ⌁ paul 100 · pnr 100 · rein 34  ⏰ 14:32│   ← one segment per account:
-└──────────────────────────────────────────────┘      7d Fable %, colored by
-                                                      the worst quota window
-```
+<p align="center"><img src="docs/label.png" height="34" alt="Menu bar label — one colored segment per account: 7d Fable percent, active profile underlined"></p>
+<p align="center"><img src="docs/dropdown.png" width="360" alt="Dropdown — per-account quota windows with reset countdowns, badges, and profile switching"></p>
+<p align="center"><sub>Staged data — real accounts never appear in this repo.</sub></p>
 
 Meridian multiplexes several Claude Max accounts behind one local endpoint.
 What it doesn't give you is ambient awareness: which account is about to hit

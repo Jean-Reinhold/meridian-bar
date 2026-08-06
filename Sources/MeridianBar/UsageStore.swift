@@ -18,6 +18,21 @@ final class UsageStore {
     private var misses = 0
     private var pollTask: Task<Void, Never>?
     private let notifier = UsageNotifier()
+    private let isPreview: Bool
+
+    init() {
+        isPreview = false
+    }
+
+    /// Staged store for `--render-preview` (docs screenshots) — never polls.
+    init(preview quota: QuotaAll, profiles: ProfilesList, health: Health?) {
+        isPreview = true
+        self.quota = quota
+        self.profiles = profiles
+        self.health = health
+        self.lastSuccess = Date()
+        self.offline = false
+    }
 
     var pollInterval: TimeInterval {
         let v = UserDefaults.standard.double(forKey: "pollInterval")
@@ -62,6 +77,7 @@ final class UsageStore {
     }
 
     func refresh() async {
+        if isPreview { return }
         let client = MeridianClient.configured()
         async let quotaReq = client.quotaAll()
         async let profilesReq = client.profilesList()

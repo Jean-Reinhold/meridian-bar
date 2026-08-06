@@ -71,7 +71,8 @@ Confirmed with the project owner (2026-08-06):
 2. Verify the published pipeline end to end: `install.sh` against the
    real release, `brew install --cask jean-reinhold/tap/meridian-bar`,
    and a Sparkle update offer from v0.1.0 → next tag.
-3. README staged screenshots (redacted data only).
+3. README screenshots — DONE 2026-08-06 via `--render-preview` (staged
+   data, offscreen hosting-view snapshot; see `PreviewRenderer.swift`).
 
 ## Owner actions pending
 
