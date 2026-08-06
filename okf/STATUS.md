@@ -5,7 +5,8 @@ over older docs until those docs are revised.
 
 ## State
 
-- **Phase: M1+M2 implemented and smoke-tested live; CI landing.**
+- **Phase: M1+M2 complete — all smoke tests passed; CI verification in
+  progress.**
 - Published at <https://github.com/Jean-Reinhold/meridian-bar>
   (2026-08-06). Repo settings: Discussions, secret scanning + push
   protection, dependency alerts, private vulnerability reporting, branch
@@ -18,19 +19,23 @@ over older docs until those docs are revised.
   the active, blocked `paul`), non-template color rendering confirmed
   (risk R1 closed). Dropdown verified by owner screenshot: per-account
   cards, per-window bars + countdowns, `blocked` flags, switch buttons,
-  health footer `Operational · Meridian 1.60.0`. Offline-path smoke test
-  (Meridian stopped) still pending.
+  health footer `Operational · Meridian 1.60.0`.
+- **Offline-path smoke test PASSED (2026-08-06):** app pointed at a dead
+  port (via `baseURL` default — live Meridian untouched); bar degraded to
+  the gray `meridian ⏻` marker within two 5 s polls, and recovered to
+  live colored segments (`rein 62 · paul 100 · pnr 100`) without a
+  relaunch after the override was removed. Base URL is re-read every
+  poll, so recovery needs no restart. Completes the M1 gate.
 - Meridian surface verified live on 2026-08-06 against Meridian **1.60.0**
   (`okf/01`): `/v1/usage/quota/all`, `/profiles/list`, `/health`,
   `POST /profiles/active` all confirmed with real three-profile data.
-- **Host toolchain quirk:** CLT 6.3.2 SwiftPM cannot compile *any*
-  package manifest (PackageDescription dylib/interface mismatch —
-  `swiftLanguageVersions` symbol missing at link). Even a trivial
-  manifest fails; cache purge doesn't help; no Xcode.app installed.
-  Workaround in-repo: `make build-direct` / `make app-direct` compile the
-  dependency-free sources with plain `swiftc`. `swift test` therefore
-  cannot run on this host — unit tests run in CI (macos-latest, full
-  Xcode). Fix path if wanted: reinstall CLT.
+- **Host toolchain quirk RESOLVED (2026-08-06):** the SwiftPM manifest
+  failure was caused by orphaned Feb-2024 `.private.swiftinterface` files
+  shadowing the fresh PackageDescription interface. Fixed by installing
+  CLT 26.6 (`softwareupdate`) and moving the orphans to
+  `*.orphaned2024.bak` (admin prompt, reversible). `swift build` and
+  `make test` (11/11 green) now run locally; the `build-direct`
+  workaround has been removed from the Makefile. Details: `okf/03`.
 
 ## Owner requirements of record
 
@@ -57,14 +62,12 @@ Confirmed with the project owner (2026-08-06):
 
 ## Near-term queue (in order)
 
-1. Push code + CI (`ci.yml`, CodeQL, Scorecard, dependency review);
-   confirm green; then require CI-green in branch protection.
-2. Offline-path smoke test (stop Meridian, watch the label degrade,
-   restart, watch it recover) — completes the M1 gate.
-3. **M3 — comfort**: settings window, label styles, launch-at-login,
+1. Confirm CI green (`ci.yml`, CodeQL, Scorecard, dependency review);
+   then require CI-green in branch protection.
+2. **M3 — comfort**: settings window, label styles, launch-at-login,
    notifications (`okf/05` F8–F11).
-4. **M4 — ship**: icon/polish, release workflow, `install.sh`, Homebrew
-   tap, Sparkle + channels (`okf/05` F12–F15, `okf/06`).
+3. **M4 — ship**: icon/polish, release workflow, Homebrew tap, Sparkle +
+   channels (`okf/05` F12–F15, `okf/06`); `install.sh` already in-repo.
 
 ## Owner actions pending
 

@@ -1,42 +1,36 @@
 VERSION ?= 0.0.0-dev
 APP      = dist/MeridianBar.app
 BIN      = .build/release/MeridianBar
-DIRECT   = .build/direct/MeridianBar
-SRC      = Sources/MeridianBar/*.swift
 
-.PHONY: build build-direct test app app-direct run install uninstall clean
+# Bare CommandLineTools keep Swift Testing out of the default search
+# paths (okf/03). Xcode toolchains (CI) need no help, so the flags are
+# gated on the selected developer dir.
+DEV_DIR := $(shell xcode-select -p 2>/dev/null)
+ifeq ($(DEV_DIR),/Library/Developer/CommandLineTools)
+CLT_FRAMEWORKS = /Library/Developer/CommandLineTools/Library/Developer/Frameworks
+CLT_TESTLIB    = /Library/Developer/CommandLineTools/Library/Developer/usr/lib
+TEST_FLAGS = -Xswiftc -F -Xswiftc $(CLT_FRAMEWORKS) \
+             -Xlinker -F -Xlinker $(CLT_FRAMEWORKS) \
+             -Xlinker -rpath -Xlinker $(CLT_FRAMEWORKS) \
+             -Xlinker -rpath -Xlinker $(CLT_TESTLIB)
+endif
+
+.PHONY: build test app run install uninstall clean
 
 build:
 	swift build -c release
 
-# Fallback for hosts where the CLT SwiftPM manifest toolchain is broken
-# (see okf/STATUS.md). The sources are dependency-free, so a direct
-# compile is equivalent.
-build-direct:
-	mkdir -p .build/direct
-	swiftc -O -parse-as-library -swift-version 6 $(SRC) -o $(DIRECT)
-
 test:
-	swift test
-
-define bundle
-	rm -rf $(APP)
-	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
-	cp $(1) $(APP)/Contents/MacOS/MeridianBar
-	sed 's/__VERSION__/$(VERSION)/g' Support/Info.plist > $(APP)/Contents/Info.plist
-	codesign --force -s - $(APP)
-endef
+	swift test $(TEST_FLAGS)
 
 app: build
-	$(call bundle,$(BIN))
-
-app-direct: build-direct
-	$(call bundle,$(DIRECT))
+	rm -rf $(APP)
+	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
+	cp $(BIN) $(APP)/Contents/MacOS/MeridianBar
+	sed 's/__VERSION__/$(VERSION)/g' Support/Info.plist > $(APP)/Contents/Info.plist
+	codesign --force -s - $(APP)
 
 run: app
-	open $(APP)
-
-run-direct: app-direct
 	open $(APP)
 
 install: app

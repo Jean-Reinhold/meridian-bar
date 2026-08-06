@@ -52,8 +52,18 @@ value is being *invisible* when not looked at — footprint is the product.
   `com.jeanreinhold.MeridianBar`. App Transport Security: loopback HTTP is
   exempt by default (`NSAllowsLocalNetworking` only if a non-loopback base
   URL is ever configured — it is not in v1).
-- Tests use **Swift Testing** (`swift test`), which ships with the
-  toolchain — XCTest availability under bare CLT is unreliable.
+- Tests use **Swift Testing** via `make test`. Under bare CLT the Testing
+  framework lives outside the default search paths
+  (`CLT/Library/Developer/Frameworks` + `…/usr/lib` for
+  `lib_TestingInterop.dylib`), so the Makefile injects `-F`/`-rpath`
+  flags — gated on `xcode-select -p`, so Xcode/CI builds are untouched.
+  *(verified 2026-08-06: 11/11 tests pass locally)*
+- **Host defect encountered & fixed (2026-08-06):** orphaned Feb-2024
+  `PackageDescription.swiftmodule/*.private.swiftinterface` files (owned
+  by no installed pkg) shadowed the current interface and broke *every*
+  SwiftPM manifest compile. Fix: CLT 26.6 reinstall + moving the orphans
+  to `*.orphaned2024.bak`. Symptom to recognize: undefined
+  `swiftLanguageVersions` `Package.init` symbol at manifest link.
 - CI (GitHub Actions `macos-15`) has full Xcode; it runs the same
   `make app` + `swift test` path as local, so local CLT is the constraining
   environment by design.
@@ -74,8 +84,9 @@ spaghetti — state flows one way: client → store → views.
   validated on-device in M1; fallback is a monochrome label with
   `●▲■` health glyphs. Gate: G1.
 - **R2 — SwiftUI under bare CLT.** `swift build` linking SwiftUI works
-  with the CLT SDK, but is less traveled than Xcode builds. Validated in
-  M1 before any UI work builds on it. Gate: G1.
+  with the CLT SDK, but is less traveled than Xcode builds. **Resolved:**
+  release build + test suite verified locally 2026-08-06 (see build
+  constraints above for the two host quirks encountered).
 - **R3 — `MenuBarExtra` label refresh cadence.** Label views re-render on
   `@Observable` change; if the image swap flickers, throttle label updates
   to actual content changes (equatable segment model).
