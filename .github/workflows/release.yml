@@ -1,0 +1,147 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  SPARKLE_VERSION: "2.9.5"
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Version from tag
+        id: v
+        run: |
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          case "$GITHUB_REF_NAME" in
+            *-*) echo "channel=beta" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "channel=stable" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Build universal binary
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Test
+        run: swift test
+
+      - name: Assemble bundle
+        run: |
+          make app VERSION="${{ steps.v.outputs.version }}" \
+            BIN=.build/apple/Products/Release/MeridianBar
+
+      - name: Zip and checksum
+        id: zip
+        run: |
+          ZIP="MeridianBar-${{ steps.v.outputs.version }}.zip"
+          ditto -c -k --keepParent dist/MeridianBar.app "$ZIP"
+          shasum -a 256 "$ZIP" > "$ZIP.sha256"
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "length=$(stat -f %z "$ZIP")" >> "$GITHUB_OUTPUT"
+
+      - name: Sparkle EdDSA signature
+        id: sign
+        env:
+          SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_KEY" ]; then
+            echo "signature=" >> "$GITHUB_OUTPUT"
+            echo "::warning::SPARKLE_PRIVATE_KEY not set — appcast entry will be unsigned"
+            exit 0
+          fi
+          curl -fsSL -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          mkdir sparkle-dist && tar xf sparkle.tar.xz -C sparkle-dist
+          printf '%s' "$SPARKLE_KEY" > priv.key
+          SIG=$(./sparkle-dist/bin/sign_update -f priv.key "${{ steps.zip.outputs.zip }}" \
+            | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')
+          rm -f priv.key
+          echo "signature=$SIG" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          EXTRA=""
+          [ "${{ steps.v.outputs.channel }}" = "beta" ] && EXTRA="--prerelease"
+          gh release create "$GITHUB_REF_NAME" \
+            "${{ steps.zip.outputs.zip }}" "${{ steps.zip.outputs.zip }}.sha256" \
+            --generate-notes $EXTRA
+
+      - name: Append appcast item (gh-pages)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin gh-pages
+          git worktree add pages origin/gh-pages
+          cd pages
+          VERSION="${{ steps.v.outputs.version }}"
+          CHANNEL_TAG=""
+          [ "${{ steps.v.outputs.channel }}" = "beta" ] && \
+            CHANNEL_TAG="      <sparkle:channel>beta</sparkle:channel>"
+          SIG_ATTR=""
+          [ -n "${{ steps.sign.outputs.signature }}" ] && \
+            SIG_ATTR=" sparkle:edSignature=\"${{ steps.sign.outputs.signature }}\""
+          ITEM=$(cat <<EOF
+    <item>
+      <title>${VERSION}</title>
+      <sparkle:version>${VERSION}</sparkle:version>
+      <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
+${CHANNEL_TAG}
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <pubDate>$(date -R)</pubDate>
+      <enclosure url="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${{ steps.zip.outputs.zip }}" length="${{ steps.zip.outputs.length }}" type="application/octet-stream"${SIG_ATTR}/>
+    </item>
+EOF
+          )
+          awk -v item="$ITEM" '{print} /<!-- ITEMS -->/ && !done {print item; done=1}' \
+            appcast.xml > appcast.tmp && mv appcast.tmp appcast.xml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add appcast.xml
+          git commit -m "appcast: v${VERSION} (${{ steps.v.outputs.channel }})"
+          git push origin HEAD:gh-pages
+
+      - name: Bump Homebrew cask
+        if: steps.v.outputs.channel == 'stable'
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+        run: |
+          if [ -z "$TAP_TOKEN" ]; then
+            echo "::notice::TAP_PUSH_TOKEN not set — skipping tap bump"
+            exit 0
+          fi
+          VERSION="${{ steps.v.outputs.version }}"
+          SHA=$(awk '{print $1}' "${{ steps.zip.outputs.zip }}.sha256")
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/Jean-Reinhold/homebrew-tap.git" tap
+          mkdir -p tap/Casks
+          printf '%s\n' \
+            'cask "meridian-bar" do' \
+            "  version \"${VERSION}\"" \
+            "  sha256 \"${SHA}\"" \
+            '  url "https://github.com/Jean-Reinhold/meridian-bar/releases/download/v#{version}/MeridianBar-#{version}.zip"' \
+            '  name "MeridianBar"' \
+            '  desc "Menu bar Claude usage across all Meridian profiles"' \
+            '  homepage "https://github.com/Jean-Reinhold/meridian-bar"' \
+            '  auto_updates true' \
+            '  app "MeridianBar.app"' \
+            '' \
+            '  caveats <<~EOS' \
+            '    MeridianBar is ad-hoc signed (no Apple certificate — deliberate).' \
+            '    If Gatekeeper complains on first launch:' \
+            '      xattr -dr com.apple.quarantine "/Applications/MeridianBar.app"' \
+            '  EOS' \
+            'end' \
+            > tap/Casks/meridian-bar.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/meridian-bar.rb
+          git commit -m "meridian-bar ${VERSION}"
+          git push

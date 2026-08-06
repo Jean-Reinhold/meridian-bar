@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("labelStyle") private var labelStyle = LabelStyle.segments.rawValue
     @AppStorage("primaryWindow") private var primaryWindow = UsageLogic.defaultPrimaryWindow
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
+    @AppStorage("updateChannel") private var updateChannel = "stable"
 
     var body: some View {
         Form {
@@ -57,6 +58,15 @@ struct SettingsView: View {
                 Text("Fires once per transition: above 60%, above 85%, exhausted, and reset.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section("Updates") {
+                Picker("Channel", selection: $updateChannel) {
+                    Text("Stable").tag("stable")
+                    Text("Beta").tag("beta")
+                }
+                Button("Check for updates…") { UpdaterController.shared.checkForUpdates() }
+                    .disabled(!UpdaterController.shared.isAvailable)
             }
         }
         .formStyle(.grouped)

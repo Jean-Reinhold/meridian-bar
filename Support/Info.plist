@@ -6,6 +6,8 @@
 	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>MeridianBar</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.jeanreinhold.MeridianBar</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -24,5 +26,11 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>MIT License — Jean Reinhold</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://jean-reinhold.github.io/meridian-bar/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>ybD1rGfW32miAHKJnmSn3N1vWuDA8poL4+qxx6JUlas=</string>
 </dict>
 </plist>

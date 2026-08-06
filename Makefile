@@ -25,8 +25,14 @@ test:
 
 app: build
 	rm -rf $(APP)
-	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
+	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources $(APP)/Contents/Frameworks
 	cp $(BIN) $(APP)/Contents/MacOS/MeridianBar
+	cp Support/AppIcon.icns $(APP)/Contents/Resources/AppIcon.icns
+	@FW=$$(find .build -type d -name Sparkle.framework -path '*macos*' | head -1); \
+	if [ -n "$$FW" ]; then \
+	  cp -R "$$FW" $(APP)/Contents/Frameworks/; \
+	  codesign --force -s - $(APP)/Contents/Frameworks/Sparkle.framework; \
+	else echo "warning: Sparkle.framework not found in .build — updater will be dead"; fi
 	sed 's/__VERSION__/$(VERSION)/g' Support/Info.plist > $(APP)/Contents/Info.plist
 	codesign --force -s - $(APP)
 

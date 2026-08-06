@@ -101,6 +101,7 @@ struct UsageMenuView: View {
                     NSApp.activate(ignoringOtherApps: true)
                     NSApp.orderFrontStandardAboutPanel(nil)
                 }
+                Button("Updates") { UpdaterController.shared.checkForUpdates() }
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
             }
