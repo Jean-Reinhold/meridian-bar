@@ -65,7 +65,9 @@ Confirmed with the project owner (2026-08-06):
 
 1. When GitHub Actions recovers: confirm CI green on `main`, confirm the
    `v0.1.0` release run (artifact, appcast item, cask bump), then require
-   CI-green in branch protection.
+   CI-green in branch protection. If the outage swallowed the tag-push
+   event (it swallowed two branch pushes), re-fire with
+   `git push origin :v0.1.0 && git push origin v0.1.0`.
 2. Verify the published pipeline end to end: `install.sh` against the
    real release, `brew install --cask jean-reinhold/tap/meridian-bar`,
    and a Sparkle update offer from v0.1.0 → next tag.
