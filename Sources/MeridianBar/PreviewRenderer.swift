@@ -116,7 +116,7 @@ enum PreviewRenderer {
                     lastSuccessAt: now),
             ],
             activeProfile: "work", routing: "priority",
-            profileOrder: ["personal", "work", "team_eu"], exhausted: ["team_eu"]
+            profileOrder: ["personal", "work", "team_eu"], exhausted: [ExhaustedEntry(id: "team_eu")]
         )
         let health = Health(
             status: "healthy", version: "1.60.0",

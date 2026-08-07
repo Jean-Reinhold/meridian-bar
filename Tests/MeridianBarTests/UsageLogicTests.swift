@@ -153,7 +153,7 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
     @Test func exhaustedForcesBlocked() throws {
         let (quota, profiles) = try decodeFixtures()
         var p = profiles
-        p.exhausted = ["jean_reinhold"]
+        p.exhausted = [.init(id: "jean_reinhold")]
         let segs = UsageLogic.segments(quota: quota, profiles: p)
         #expect(segs.first { $0.id == "jean_reinhold" }?.status == .blocked)
     }
@@ -163,6 +163,23 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
         let segs = UsageLogic.segments(quota: nil, profiles: profiles)
         #expect(segs.count == 3)
         #expect(segs.allSatisfy { $0.percent == nil && $0.status == .ok })
+    }
+}
+
+@Suite struct ExhaustedDecoding {
+    // Meridian 1.60.0 sends objects; captures ≤2026-08-06 sent bare id
+    // strings (okf/01) — both must decode.
+    @Test func objectAndLegacyStringShapes() throws {
+        let json = """
+            {"profiles": [], "exhausted": [
+              {"id": "jean_reinhold", "until": 1786122000000, "reason": "rate_limit_error"},
+              "jeanpnr"
+            ]}
+            """
+        let list = try JSONDecoder().decode(ProfilesList.self, from: Data(json.utf8))
+        #expect(list.exhausted?.map(\.id) == ["jean_reinhold", "jeanpnr"])
+        #expect(list.exhausted?.first?.until == 1_786_122_000_000)
+        #expect(list.exhausted?.first?.reason == "rate_limit_error")
     }
 }
 

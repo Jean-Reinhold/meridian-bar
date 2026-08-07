@@ -147,7 +147,7 @@ struct AccountCard: View {
                 Text(segment.id).font(.caption.monospaced()).foregroundStyle(.secondary)
                 if segment.isActive { Badge(text: "ACTIVE", color: .blue) }
                 if let plan = info?.subscriptionType { Badge(text: plan, color: .gray) }
-                if store.profiles?.exhausted?.contains(segment.id) == true {
+                if store.profiles?.exhausted?.contains(where: { $0.id == segment.id }) == true {
                     Badge(text: "EXHAUSTED", color: .red)
                 }
                 if info?.loggedIn == false { Badge(text: "login required", color: .yellow) }

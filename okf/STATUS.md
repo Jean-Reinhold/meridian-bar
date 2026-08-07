@@ -1,4 +1,4 @@
-# Status — 2026-08-06
+# Status — 2026-08-07
 
 Living log. Update on every meaningful state change; newest facts here win
 over older docs until those docs are revised.
@@ -11,6 +11,14 @@ over older docs until those docs are revised.
   settings: Discussions, secret scanning + push protection, dependency
   alerts, private vulnerability reporting, branch protection on `main`
   (PRs; owner bypass until CI-green is required).
+- **2026-08-07 fix (API drift risk materialized):** Meridian 1.60.0 sends
+  `profiles/list` `exhausted` entries as objects (`{id, until, reason}`)
+  whenever a profile is actually rate-limited out; the app modeled
+  `[String]`, the decode threw on every poll, and two misses flipped the
+  bar to a false `meridian off` while the proxy was healthy. Fixed with
+  `ExhaustedEntry` accepting both the object and legacy bare-string
+  shapes (`okf/01` updated + dated). 18/18 tests; smoke-tested live
+  against 1.60.0 with `jean_reinhold` genuinely exhausted.
 - **M1+M2 smoke tests PASSED (2026-08-06, live Meridian 1.60.0, 3
   profiles):** bar label with Fable-primary numbers and worst-window
   colors (non-template color rendering confirmed — R1 closed); dropdown

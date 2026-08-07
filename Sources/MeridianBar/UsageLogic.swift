@@ -132,7 +132,7 @@ enum UsageLogic {
         let aliasMap = aliases(for: ids).merging(
             aliasOverrides.filter { !$0.value.isEmpty }
         ) { _, override in override }
-        let exhausted = Set(profiles?.exhausted ?? [])
+        let exhausted = Set(profiles?.exhausted?.map(\.id) ?? [])
         let active = profiles?.activeProfile
 
         return ids.map { id in

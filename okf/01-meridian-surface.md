@@ -84,7 +84,9 @@ never break or hide.
   "activeProfile": "jeanpaul",
   "routing": "priority",          // sticky-session routing mode
   "profileOrder": ["jean_reinhold", "jeanpaul", "jeanpnr"],
-  "exhausted": []                  // profile ids currently rate-limited out
+  "exhausted": [                   // profiles currently rate-limited out
+    {"id": "jean_reinhold", "until": 1786122000000, "reason": "rate_limit_error"}
+  ]
 }
 ```
 
@@ -92,6 +94,9 @@ never break or hide.
   keep this order (stable, intentional, not alphabetical).
 - `exhausted` marks profiles Meridian is currently routing around → show an
   explicit badge; this is stronger information than any single window's %.
+  Entries are objects (`id`, `until` epoch ms, `reason`) — verified live
+  2026-08-07 against 1.60.0. Captures ≤2026-08-06 sent bare id strings;
+  decoding must accept both shapes.
 - `loggedIn: false` → warning badge + the `meridian profile login <id>` hint.
 
 ## `GET /health`

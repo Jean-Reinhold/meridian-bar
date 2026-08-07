@@ -40,12 +40,40 @@ struct ProfileInfo: Codable, Equatable, Sendable {
     var lastSuccessAt: Double?
 }
 
+/// One profile Meridian is routing around. 1.60.0 sends objects
+/// (`id`/`until` epoch ms/`reason`, verified live 2026-08-07); earlier
+/// captures sent bare id strings — accept both (okf/01).
+struct ExhaustedEntry: Codable, Equatable, Sendable {
+    var id: String
+    var until: Double?
+    var reason: String?
+
+    init(id: String, until: Double? = nil, reason: String? = nil) {
+        self.id = id
+        self.until = until
+        self.reason = reason
+    }
+
+    init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(),
+            let id = try? single.decode(String.self)
+        {
+            self.id = id
+            return
+        }
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        until = try c.decodeIfPresent(Double.self, forKey: .until)
+        reason = try c.decodeIfPresent(String.self, forKey: .reason)
+    }
+}
+
 struct ProfilesList: Codable, Equatable, Sendable {
     var profiles: [ProfileInfo]
     var activeProfile: String?
     var routing: String?
     var profileOrder: [String]?
-    var exhausted: [String]?
+    var exhausted: [ExhaustedEntry]?
 }
 
 struct HealthAuth: Codable, Equatable, Sendable {
