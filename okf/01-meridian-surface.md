@@ -123,6 +123,19 @@ never break or hide.
 Body `{"profile": "<id>"}` → `{"success": true}`. Takes effect immediately,
 no proxy restart. Refresh `profiles/list` right after to update badges.
 
+## `PUT /settings/api/routing` (*verified live 2026-08-07, 1.60.0*)
+
+Body `{"profileOrder": ["<id>", ...]}` → `{"success": true}`. Reorders the
+priority pool; takes effect immediately (read per request), persists to
+`~/.config/meridian/settings.json`, no restart. Unknown ids → 400.
+`GET /settings/api/routing` returns the effective `{routing, profileOrder}`.
+
+**Important:** under `routing: "priority"`, chat dispatch walks
+`profileOrder` only — the `activeProfile` switch does NOT steer chat
+traffic. Rotation (failover down the order) fires only when a response is
+classified `rate_limit_error`; per-session assignments are sticky
+(in-memory, cleared on restart).
+
 ## Thresholds (shared with Meridian's UI)
 
 Meridian's dashboard classifies utilization as: **ok < 0.60 ≤ warn < 0.85 ≤

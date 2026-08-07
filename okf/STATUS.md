@@ -5,6 +5,22 @@ over older docs until those docs are revised.
 
 ## State
 
+- **2026-08-07 Meridian rotation incident (operational, not app code):**
+  user reported accounts not rotating. Root cause chain in Meridian 1.60.0:
+  (1) `classifyError` didn't recognize the phrasing "You've reached your
+  Fable 5 limit." → misclassified as `api_error` instead of
+  `rate_limit_error`; (2) priority failover (`sniffQuotaFailure`) only
+  triggers on `rate_limit_error` → rotation never fired; (3) sticky
+  in-memory session pins kept conversations on the limited profile;
+  (4) under `routing: "priority"` the `activeProfile` switch does not
+  steer chat dispatch at all (source-verified, recorded in `okf/01`).
+  Fixes applied: pool reordered via `PUT /settings/api/routing` to
+  `[jeanpaul, jean_reinhold, jeanpnr]` (jeanpaul = only profile with
+  headroom), `classifyError` patched in the installed dist to map
+  "reached your … limit" → 429 `rate_limit_error` (backup at
+  /tmp/cli-k1djafvr.js.bak; patch is local — upstream 1.60.0 is latest on
+  npm, worth reporting), proxy kickstarted to load patch + clear pins.
+  Verified: chat probe 200 in 2.6 s landing on `jeanpaul(priority)`.
 - **Phase: M0–M4 implemented; v0.1.0 tagging in progress. CI/release
   verification pending a GitHub Actions outage (see below).**
 - Published at <https://github.com/Jean-Reinhold/meridian-bar>. Repo
