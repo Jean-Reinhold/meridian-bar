@@ -36,8 +36,23 @@ make install
 
 > MeridianBar is ad-hoc signed, not Apple-notarized — a deliberate project
 > decision (see [`okf/06`](okf/06-release.md)). Integrity comes from the
-> published sha256, which the installer verifies. Homebrew cask and Sparkle
-> in-app updates (stable/beta channels) are on the roadmap.
+> published sha256, which the installer verifies. Sparkle in-app updates
+> (stable/beta channels) ship in the app, and each release also publishes a
+> Homebrew cask to our tap: `brew install --cask jean-reinhold/tap/meridian-bar`
+> *(available once the first CI-built release lands)*.
+
+### The `tap/` submodule
+
+[`tap/`](tap) is a git submodule pointing at
+[Jean-Reinhold/homebrew-tap](https://github.com/Jean-Reinhold/homebrew-tap),
+the Homebrew tap our release workflow bumps on every tag. Homebrew requires
+taps to live in a separate repo named `homebrew-tap` — the shorthand
+`jean-reinhold/tap/...` hardcodes that lookup — so the cask can't live here
+directly (details in [`okf/06`](okf/06-release.md)). The submodule exists for
+visibility only: it is **not needed to build or run**, and a plain
+`git clone` without `--recurse-submodules` is fine. The pinned commit can lag
+the newest release (the workflow pushes to the tap repo directly); refresh it
+with `git submodule update --remote tap`.
 
 ## What you see
 

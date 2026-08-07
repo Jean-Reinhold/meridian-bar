@@ -96,7 +96,10 @@ Priority order for someone who finds the repo:
    the app bundle and its own defaults domain.
 2. **Homebrew cask**: `brew install --cask jean-reinhold/tap/meridian-bar`
    via a `homebrew-tap` repo; formula auto-bumped by `release.yml`,
-   `auto_updates true` once Sparkle ships.
+   `auto_updates true` once Sparkle ships. The tap repo is linked as the
+   `tap/` submodule in the main repo for visibility (added 2026-08-07);
+   its pinned commit may lag releases since the workflow pushes to the tap
+   directly — refresh with `git submodule update --remote tap`.
 3. **From source**: `git clone && make install` for developers.
 
 ## Easy updates & channels
