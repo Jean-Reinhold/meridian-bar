@@ -64,12 +64,14 @@ private struct CodexHome {
         try Data(file.utf8).write(to: url.appendingPathComponent("auth.json"))
     }
 
-    func client(quotaURL: URL = CodexUsageClient.quotaURL, now: Date = noon) -> CodexUsageClient {
+    func client(
+        quotaURL: URL = CodexUsageClient.quotaURL, now: Date = noon, quotaRefreshInterval: TimeInterval = 0
+    ) -> CodexUsageClient {
         let cfg = URLSessionConfiguration.ephemeral
         cfg.protocolClasses = [StubProtocol.self]
         return CodexUsageClient(
             codexHome: url, quotaURL: quotaURL, sessionConfiguration: cfg, calendar: berlinCalendar,
-            now: { now })
+            now: { now }, quotaRefreshInterval: quotaRefreshInterval, quotaRetryInterval: 0)
     }
 }
 
@@ -112,6 +114,13 @@ private final class StubProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+private final class Counter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    var value: Int { lock.withLock { count } }
+    func increment() { lock.withLock { count += 1 } }
 }
 
 private func stubURL() -> URL { URL(string: "https://stub.invalid/\(UUID().uuidString)/usage")! }
@@ -324,6 +333,31 @@ private let liveShapedQuota = """
         #expect(snap.quotaError?.contains("expired") == true)
         #expect(snap.email == "a@example.com")
         #expect(snap.plan == "pro")
+    }
+
+    @Test func quotaFetchIsThrottledAndForceBypasses() async throws {
+        let home = try CodexHome()
+        defer { home.remove() }
+        try home.auth(accountId: "acct-1", email: "a@example.com")
+        let url = stubURL()
+        let hits = Counter()
+        StubProtocol.set(url) { _ in
+            hits.increment()
+            return (200, Data(liveShapedQuota.utf8))
+        }
+        let client = home.client(quotaURL: url, quotaRefreshInterval: 300)
+
+        let first = await client.snapshot()
+        let second = await client.snapshot()
+        // Within the interval the remembered windows are served without a
+        // request and without an error banner.
+        #expect(hits.value == 1)
+        #expect(second.windows == first.windows)
+        #expect(second.quotaError == nil)
+        #expect(second.quotaUpdatedAt == first.quotaUpdatedAt)
+
+        _ = await client.snapshot(forceQuota: true)
+        #expect(hits.value == 2)
     }
 
     @Test func staleQuotaSurvivesOnlyForSameAccount() async throws {

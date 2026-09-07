@@ -99,10 +99,17 @@ actor CodexUsageClient {
     private let session: URLSession
     private let calendar: Calendar
     private let now: @Sendable () -> Date
+    /// `wham/usage` is rate limited per IP and OMP polls it too, so a fresh
+    /// fetch happens at most every `quotaRefreshInterval` (default 5 min)
+    /// and, after a failure, every `quotaRetryInterval` (default 1 min).
+    private let quotaRefreshInterval: TimeInterval
+    private let quotaRetryInterval: TimeInterval
 
     private var files: [String: SessionFileState] = [:]
     private var filesTimeZone: String
     private var lastQuota: QuotaMemory?
+    private var lastQuotaAttempt: Date?
+    private var lastQuotaError: String?
 
     /// `home` is the user home. With the default home, `CODEX_HOME` overrides
     /// the Codex directory the same way it does for the Codex CLI.
@@ -122,7 +129,9 @@ actor CodexUsageClient {
         quotaURL: URL = CodexUsageClient.quotaURL,
         sessionConfiguration: URLSessionConfiguration = .ephemeral,
         calendar: Calendar = .autoupdatingCurrent,
-        now: @escaping @Sendable () -> Date = Date.init
+        now: @escaping @Sendable () -> Date = Date.init,
+        quotaRefreshInterval: TimeInterval = 300,
+        quotaRetryInterval: TimeInterval = 60
     ) {
         self.codexHome = codexHome
         self.quotaURL = quotaURL
@@ -133,16 +142,30 @@ actor CodexUsageClient {
         self.session = URLSession(configuration: sessionConfiguration)
         self.calendar = calendar
         self.now = now
+        self.quotaRefreshInterval = quotaRefreshInterval
+        self.quotaRetryInterval = quotaRetryInterval
         self.filesTimeZone = calendar.timeZone.identifier
     }
 
-    func snapshot() async -> CodexUsageSnapshot {
+    /// `forceQuota` bypasses the fetch throttle (user-initiated refresh).
+    func snapshot(forceQuota: Bool = false) async -> CodexUsageSnapshot {
         let auth = Self.loadAuth(at: codexHome.appendingPathComponent("auth.json"))
-        async let quota = Self.fetchQuota(session: session, url: quotaURL, auth: auth)
+        let fetch = forceQuota || shouldFetchQuota(for: auth)
+        async let quota = fetch ? Self.fetchQuota(session: session, url: quotaURL, auth: auth) : .cached
 
         let local = await loadLocal()
         let quotaResult = await quota
+        if fetch, case .chatGPT = auth { lastQuotaAttempt = now() }
         return assemble(auth: auth, quota: quotaResult, local: local)
+    }
+
+    private func shouldFetchQuota(for auth: AuthState) -> Bool {
+        guard case .chatGPT = auth else { return true }
+        guard let remembered = lastQuota, remembered.accountId == auth.accountId,
+            let attempt = lastQuotaAttempt
+        else { return true }
+        let interval = lastQuotaError == nil ? quotaRefreshInterval : quotaRetryInterval
+        return now().timeIntervalSince(attempt) >= interval
     }
 
     // MARK: - Snapshot assembly
@@ -182,22 +205,32 @@ actor CodexUsageClient {
             lastQuota = QuotaMemory(
                 accountId: identity, windows: windows, plan: response.planType,
                 email: response.email, updatedAt: fetchedAt)
+            lastQuotaError = nil
             snap.windows = windows
             snap.quotaUpdatedAt = fetchedAt
             if let plan = response.planType { snap.plan = plan }
             if let email = response.email { snap.email = email }
         case .failure(let reason):
-            if let remembered = lastQuota, remembered.accountId == identity, identity != nil {
-                snap.windows = remembered.windows
-                snap.quotaUpdatedAt = remembered.updatedAt
-                if snap.plan == nil { snap.plan = remembered.plan }
-                if snap.email == nil { snap.email = remembered.email }
-                snap.quotaError = "\(reason) Showing quota from the last successful refresh."
-            } else {
-                snap.quotaError = reason
-            }
+            lastQuotaError = reason
+            applyRemembered(to: &snap, identity: identity, error: reason)
+        case .cached:
+            applyRemembered(to: &snap, identity: identity, error: lastQuotaError)
         }
         return snap
+    }
+
+    /// Fills the snapshot from the last successful fetch for the same
+    /// account; `error` explains why no fresh data replaced it.
+    private func applyRemembered(to snap: inout CodexUsageSnapshot, identity: String?, error: String?) {
+        if let remembered = lastQuota, remembered.accountId == identity, identity != nil {
+            snap.windows = remembered.windows
+            snap.quotaUpdatedAt = remembered.updatedAt
+            if snap.plan == nil { snap.plan = remembered.plan }
+            if snap.email == nil { snap.email = remembered.email }
+            if let error { snap.quotaError = "\(error) Showing quota from the last successful refresh." }
+        } else if let error {
+            snap.quotaError = error
+        }
     }
 
     // MARK: - Local rollouts
@@ -600,6 +633,7 @@ actor CodexUsageClient {
 
     private enum QuotaResult: Sendable {
         case none
+        case cached
         case success(QuotaResponse)
         case failure(String)
     }

@@ -26,6 +26,17 @@ All notable changes to MeridianBar. Format follows
 - The dropdown is wider (420 pt) and scrolls; an Accounts… button opens the
   new window. The app now talks to `chatgpt.com` for Codex quota in addition
   to the loopback Meridian endpoint.
+- ChatGPT quota is fetched at most every 5 minutes (1 minute after a
+  failure) and the last good windows are shown in between; the Refresh
+  button forces a fetch. The endpoint is rate limited per IP and OMP polls
+  it too, which had produced intermittent "quota unavailable" banners.
+
+### Fixed
+
+- The Accounts window no longer opens by itself: it was declared as a
+  SwiftUI `Window` scene, which macOS opens at launch as the app's main
+  window and brought to front when the bar was clicked, hiding the usage
+  dropdown. It is now an explicit window opened only from "Accounts…".
 
 ## [0.1.0] - 2026-08-06
 

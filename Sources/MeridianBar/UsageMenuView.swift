@@ -7,7 +7,6 @@ import SwiftUI
 /// of sitting on an opaque panel.
 struct UsageMenuView: View {
     let store: UsageStore
-    @Environment(\.openWindow) private var openWindow
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -15,10 +14,7 @@ struct UsageMenuView: View {
             HStack {
                 Text("Usage").font(.title3.bold())
                 Spacer()
-                Button("Accounts…") {
-                    openWindow(id: "accounts")
-                    NSApp.activate(ignoringOtherApps: true)
-                }
+                Button("Accounts…") { AccountsWindowController.shared.show(store: store) }
             }
             ScrollView {
                 Group {
@@ -109,7 +105,7 @@ struct UsageMenuView: View {
                     }
                 }
             HStack {
-                Button("Refresh") { Task { await store.refresh() } }
+                Button("Refresh") { Task { await store.refresh(forceCodexQuota: true) } }
                 Button("Dashboard") {
                     NSWorkspace.shared.open(MeridianClient.configured().baseURL)
                 }

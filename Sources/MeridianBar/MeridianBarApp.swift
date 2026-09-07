@@ -22,11 +22,6 @@ struct MeridianBarApp: App {
         }
         .menuBarExtraStyle(.window)
 
-
-        Window("Accounts", id: "accounts") {
-            AccountsView(store: store)
-        }
-        .defaultSize(width: 620, height: 650)
         Settings {
             SettingsView(store: store)
         }

@@ -118,20 +118,22 @@ final class UsageStore {
         }
     }
 
-    func refresh() async {
+    /// `forceCodexQuota` bypasses the ChatGPT quota throttle; only the
+    /// user's Refresh button sets it, since the endpoint is IP rate limited.
+    func refresh(forceCodexQuota: Bool = false) async {
         if isPreview { return }
         if let refreshTask {
             await refreshTask.value
-            return
+            if !forceCodexQuota { return }
         }
-        let task = Task { await performRefresh() }
+        let task = Task { await performRefresh(forceCodexQuota: forceCodexQuota) }
         refreshTask = task
         await task.value
         refreshTask = nil
     }
 
-    private func performRefresh() async {
-        async let codexRequest = codexClient.snapshot()
+    private func performRefresh(forceCodexQuota: Bool) async {
+        async let codexRequest = codexClient.snapshot(forceQuota: forceCodexQuota)
         async let accountsRequest: Void = refreshAccounts()
         await refreshMeridian()
         codex = await codexRequest

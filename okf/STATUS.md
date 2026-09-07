@@ -5,6 +5,16 @@ over older docs until those docs are revised.
 
 ## State
 
+- **2026-09-07 follow-up (78/78 tests):** owner reported the bar click
+  showing only accounts, no per-account bars or reset times. Cause: the
+  Accounts `Window` scene in the app body — SwiftUI opens the first window
+  scene at launch and on activation, so it sat over the dropdown. Replaced
+  by `AccountsWindowController` (explicit `NSWindow`, opened only from the
+  dropdown button). Second report, intermittent "quota unavailable":
+  `wham/usage` is IP rate limited and OMP polls it as well; the client now
+  fetches at most every 5 min (1 min retry after failure), serves the last
+  good windows in between with no error banner, and only the dropdown
+  Refresh button forces a fetch (`snapshot(forceQuota:)`).
 - **2026-09-07 M5 implemented (F17–F19, 77/77 tests):** Codex card
   (ChatGPT quota from `wham/usage` + local token consumption from
   `$CODEX_HOME/sessions`), `Codex NN%` bar segment, Accounts window

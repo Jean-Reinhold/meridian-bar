@@ -1,5 +1,29 @@
 import SwiftUI
 
+/// Owns the Accounts window. A `Window` scene in the app body would open
+/// at launch as the app's main window (SwiftUI opens the first window
+/// scene), which an `LSUIElement` menu bar app must not do.
+@MainActor
+final class AccountsWindowController {
+    static let shared = AccountsWindowController()
+    private var window: NSWindow?
+
+    func show(store: UsageStore) {
+        if window == nil {
+            let host = NSHostingController(rootView: AccountsView(store: store))
+            let window = NSWindow(contentViewController: host)
+            window.title = "Accounts"
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            window.setContentSize(NSSize(width: 640, height: 680))
+            window.isReleasedWhenClosed = false
+            window.center()
+            self.window = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+    }
+}
+
 struct AccountsView: View {
     let store: UsageStore
     @State private var provider = AccountProvider.codex
