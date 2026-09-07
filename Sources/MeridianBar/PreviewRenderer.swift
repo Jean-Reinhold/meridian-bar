@@ -27,29 +27,16 @@ enum PreviewRenderer {
         let store = stagedStore()
 
         // ImageRenderer drops AppKit-bridged controls (ProgressView,
-        // Toggle), so the dropdown goes through a real hosting view.
-        let view = UsageMenuView(store: store)
-            .environment(\.colorScheme, .dark)
-            .background(Color(nsColor: .windowBackgroundColor))
-        let host = NSHostingView(rootView: view)
-        host.frame = NSRect(origin: .zero, size: host.fittingSize)
-        let window = NSWindow(
-            contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
-        window.appearance = NSAppearance(named: .darkAqua)
-        window.contentView = host
-        host.layoutSubtreeIfNeeded()
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
-        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
-            throw Failure.noImage
-        }
-        host.cacheDisplay(in: host.bounds, to: rep)
-        guard let png = rep.representation(using: .png, properties: [:]) else {
-            throw Failure.noImage
-        }
-        try png.write(to: dir.appendingPathComponent("dropdown.png"))
+        // Toggle), so every view goes through a real hosting view.
+        try snapshot(
+            UsageMenuView(store: store), appearance: .darkAqua, to: dir.appendingPathComponent("dropdown.png"))
+        try snapshot(
+            AccountsView(store: store), appearance: .darkAqua, to: dir.appendingPathComponent("accounts.png"))
+        try snapshot(
+            UsageMenuView(store: store), appearance: .aqua, to: dir.appendingPathComponent("dropdown-light.png"))
 
         // The label sits on a dark pill so it reads on any README theme.
-        let label = MenuBarLabel.render(segments: store.segments, offline: false)
+        let label = MenuBarLabel.render(segments: store.segments, offline: false, codex: store.codexSegment)
         let pill = NSImage(
             size: NSSize(width: label.size.width + 24, height: 30), flipped: false
         ) { rect in
@@ -64,6 +51,28 @@ enum PreviewRenderer {
             throw Failure.noImage
         }
         try savePNG(pillCG, to: dir.appendingPathComponent("label.png"))
+    }
+
+    private static func snapshot<V: View>(_ content: V, appearance: NSAppearance.Name, to url: URL) throws {
+        let view = content
+            .environment(\.colorScheme, appearance == .darkAqua ? .dark : .light)
+            .background(Color(nsColor: .windowBackgroundColor))
+        let host = NSHostingView(rootView: view)
+        host.frame = NSRect(origin: .zero, size: host.fittingSize)
+        let window = NSWindow(
+            contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.appearance = NSAppearance(named: appearance)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+            throw Failure.noImage
+        }
+        host.cacheDisplay(in: host.bounds, to: rep)
+        guard let png = rep.representation(using: .png, properties: [:]) else {
+            throw Failure.noImage
+        }
+        try png.write(to: url)
     }
 
     private static func savePNG(_ image: CGImage, to url: URL) throws {
@@ -123,6 +132,19 @@ enum PreviewRenderer {
             auth: HealthAuth(
                 loggedIn: true, email: nil, subscriptionType: "max",
                 renewalRequiredSoon: false, daysUntilRenewal: 30))
-        return UsageStore(preview: quota, profiles: profiles, health: health)
+        let codex = CodexUsageSnapshot(
+            email: "work@example.com", plan: "pro",
+            windows: [w("five_hour", 0.23, 2), w("seven_day", 0.61, 40)],
+            today: CodexTokenUsage(inputTokens: 1_240_000, cachedInputTokens: 980_000, outputTokens: 86_000, totalTokens: 1_326_000),
+            allTime: CodexTokenUsage(inputTokens: 48_000_000, cachedInputTokens: 39_000_000, outputTokens: 2_900_000, totalTokens: 50_900_000),
+            sessionCount: 212, lastActivity: Date(), quotaUpdatedAt: Date(), isLoggedIn: true)
+        let accounts = [
+            ManagedAccount(id: "claude:profile:personal", name: "personal", provider: .claude, email: "personal@example.com", isLoggedIn: true),
+            ManagedAccount(id: "claude:profile:work", name: "work", provider: .claude, email: "work@example.com", isActive: true, isLoggedIn: true),
+            ManagedAccount(id: "claude:profile:team_eu", name: "team_eu", provider: .claude, email: "team@example.com", isLoggedIn: true),
+            ManagedAccount(id: "codex:saved:work", name: "work", provider: .codex, email: "work@example.com", isActive: true, isLoggedIn: true),
+            ManagedAccount(id: "codex:saved:personal", name: "personal", provider: .codex, email: "personal@example.com", isLoggedIn: false),
+        ]
+        return UsageStore(preview: quota, profiles: profiles, health: health, codex: codex, accounts: accounts)
     }
 }

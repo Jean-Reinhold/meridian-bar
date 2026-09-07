@@ -25,6 +25,9 @@ not when the code compiles. Milestones gate the order; nothing ships to
 | F14 | **Easy install** — `install.sh` bash one-liner (latest release, sha256 verify, quarantine strip, `/Applications`), plus Homebrew tap cask auto-bumped by the release workflow | `curl -fsSL …/install.sh \| bash` installs and launches the current release on a clean machine; `--uninstall` removes it | M4 |
 | F15 | **In-app updates & channels** — Sparkle 2, EdDSA-signed appcasts (stable + beta) generated from GitHub Releases, channel toggle in Settings, "Check for updates…" action | A new stable tag is offered in-app; a `-beta` tag reaches only beta-channel users (`okf/06`) | M4 |
 | F16 | **Contribution pathway** — CONTRIBUTING, issue/PR templates, PR checklist, GitHub Discussions, Code of Conduct, branch protection, seeded labels | A stranger can ask a question in Discussions and land a PR gated by green CI without maintainer hand-holding (`okf/06`) | M0 |
+| F17 | **Codex consumption** — dropdown card with account-wide ChatGPT quota windows (from `wham/usage`) and local token consumption parsed from `$CODEX_HOME/sessions` (today, all time, session count); `Codex NN%` segment in the bar label | Card shows every rate-limit window with % and reset; local totals match a manual sum of `token_count` deltas; API-key logins show local totals with quota marked unavailable | M5 |
+| F18 | **Accounts window** — list Claude (Meridian profiles + default CLI) and Codex (current CLI + saved copies) accounts with sign-in state; add, sign in again, switch, sign out, remove; every mutation through the official CLIs | Adding a Codex account runs `codex login` in an isolated home and never touches `~/.codex/auth.json` until "Use account"; Claude switch reorders Meridian routing and activates the profile | M5 |
+| F19 | **OMP routing** — saved Codex accounts are imported into OMP's `openai-codex` pool (toggle, default on); sign-out and removal drop them again; OMP-only rows are never deleted | With the toggle on, a newly added Codex account appears in `omp usage --provider openai-codex`; removing it makes it disappear while other rows survive | M5 |
 
 ## Deliberately out of scope (v1)
 
@@ -50,6 +53,8 @@ not when the code compiles. Milestones gate the order; nothing ships to
 - **M3 — Comfort** (F8–F11): settings, styles, login item, notifications.
 - **M4 — Ship** (F12–F15): v0.1.0 public release — polish, security CI,
   signed builds, easy installs, in-app updates.
+- **M5 — Codex and accounts** (F17–F19): Codex quota and local consumption,
+  account management for both tools, OMP account routing.
 
 Gate rule: each milestone ends with a smoke test against the live Meridian
 instance (and, for F3, against a stopped one) recorded in `STATUS.md`.

@@ -8,9 +8,10 @@ enum MenuBarLabel {
     static let barHeight: CGFloat = 22
 
     static func render(
-        segments: [ProfileSegment], offline: Bool, style: LabelStyle = .segments
+        segments: [ProfileSegment], offline: Bool, style: LabelStyle = .segments,
+        codex: ProfileSegment? = nil
     ) -> NSImage {
-        let text = attributedText(segments: segments, offline: offline, style: style)
+        let text = attributedText(segments: segments, offline: offline, style: style, codex: codex)
         let size = text.size()
         let image = NSImage(
             size: NSSize(width: ceil(size.width), height: barHeight),
@@ -24,7 +25,26 @@ enum MenuBarLabel {
     }
 
     static func attributedText(
-        segments: [ProfileSegment], offline: Bool, style: LabelStyle = .segments
+        segments: [ProfileSegment], offline: Bool, style: LabelStyle = .segments,
+        codex: ProfileSegment? = nil
+    ) -> NSAttributedString {
+        let text = NSMutableAttributedString(
+            attributedString: claudeText(segments: segments, offline: offline, style: style))
+        if let codex {
+            let font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium)
+            text.append(NSAttributedString(
+                string: " | ", attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor]))
+            let value = style == .dots ? "●" : codex.percent.map { "\($0)%" } ?? "–"
+            text.append(NSAttributedString(string: "Codex \(value)", attributes: [
+                .font: font,
+                .foregroundColor: codex.percent == nil ? NSColor.secondaryLabelColor : color(for: codex.status),
+            ]))
+        }
+        return text
+    }
+
+    private static func claudeText(
+        segments: [ProfileSegment], offline: Bool, style: LabelStyle
     ) -> NSAttributedString {
         let font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium)
         let boldFont = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .bold)

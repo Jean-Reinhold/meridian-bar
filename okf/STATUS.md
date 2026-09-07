@@ -1,10 +1,26 @@
-# Status — 2026-08-07
+# Status — 2026-09-07
 
 Living log. Update on every meaningful state change; newest facts here win
 over older docs until those docs are revised.
 
 ## State
 
+- **2026-09-07 M5 implemented (F17–F19, 77/77 tests):** Codex card
+  (ChatGPT quota from `wham/usage` + local token consumption from
+  `$CODEX_HOME/sessions`), `Codex NN%` bar segment, Accounts window
+  (Claude profiles + default CLI, Codex current + saved copies; add,
+  sign in, switch, sign out, remove through `meridian`/`claude`/`codex`),
+  and OMP routing (`omp auth-broker import|logout openai-codex`, pool read
+  from `agent.db` read-only). New modules: `CodexUsageClient`,
+  `CodexUsageCard`, `AccountManager`, `CLIProcess`, `AccountsView`,
+  `OMPAccountSync`. Owner decisions recorded below (11–13). Smoke test
+  2026-09-07 against live Meridian 1.60.0, Codex CLI, OMP 18.1.13: app
+  launched, Codex quota fetched (HTTP 200), OMP pool read without any
+  write, current Codex login recognized as already routed, previews
+  rendered for dropdown (dark + light), accounts window, and label.
+  Not yet exercised live: adding a second Codex account (needs a second
+  ChatGPT login in the browser) and the OMP disconnect path; both are
+  covered by scripted-runner tests only.
 - **2026-08-07 Meridian rotation incident (operational, not app code):**
   user reported accounts not rotating. Root cause chain in Meridian 1.60.0:
   (1) `classifyError` didn't recognize the phrasing "You've reached your
@@ -84,6 +100,18 @@ Confirmed with the project owner (2026-08-06):
 9. **No Apple affiliation, ever** — ad-hoc signing + sha256 + Sparkle
    EdDSA (`okf/06`). Final; do not re-raise.
 10. The app doubles as the **Meridian uptime monitor** (`okf/02`).
+11. **Codex consumption in the bar** (2026-09-07): account-wide ChatGPT
+    quota and local token counts, labeled as separate scopes; local
+    counts are never shown as money.
+12. **Account management from the bar** (2026-09-07): Claude and Codex
+    accounts, including multiple OpenAI accounts, with sign-in from the
+    bar. Official CLIs only; the app never talks to an OAuth token
+    endpoint itself. This supersedes the v1 "read-mostly" non-goal in
+    `okf/02` §4.
+13. **OMP GPT traffic goes through the saved Codex accounts**
+    (2026-09-07): OMP's `openai-codex` pool mirrors the accounts saved
+    here (default on, toggle in Accounts). Meridian stays Claude-only; OMP's
+    own pool is the OpenAI multiplexer.
 
 ## Near-term queue (in order)
 

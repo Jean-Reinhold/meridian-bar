@@ -8,19 +8,30 @@ core that is unit-testable without a running Meridian.
 
 ```
 Sources/MeridianBar/
-  MeridianBarApp.swift    — @main entry, MenuBarExtra scene, poll lifecycle
-  MeridianClient.swift    — URLSession + Codable bindings for the 4 endpoints
-  UsageStore.swift        — @Observable state: merge, poll loop, offline flag
+  MeridianBarApp.swift    — @main entry, MenuBarExtra + Accounts window scenes
+  MeridianClient.swift    — URLSession + Codable bindings for the Meridian endpoints
+  CodexUsageClient.swift  — ChatGPT quota fetch + local session token parsing (actor)
+  AccountManager.swift    — Claude/Codex account listing and mutations via CLIs (actor)
+  OMPAccountSync.swift    — OMP openai-codex pool: read-only status, import/logout (actor)
+  CLIProcess.swift        — argv-only subprocess runner, tool locator, bounded output
+  UsageStore.swift        — @Observable state: merge, poll loop, offline flag,
+                            account operations (one at a time)
   UsageLogic.swift        — pure functions: status classification, aliasing,
                             window labels, countdown/percent formatting
-  MenuBarLabel.swift      — NSImage renderer for the colored label
+  MenuBarLabel.swift      — NSImage renderer for the colored label (+ Codex segment)
   UsageMenuView.swift     — SwiftUI dropdown
-Tests/MeridianBarTests/   — decoding fixtures + UsageLogic tests
+  CodexUsageCard.swift    — Codex quota + local consumption card
+  AccountsView.swift      — Accounts window (list, actions, OMP routing toggle)
+Tests/MeridianBarTests/   — decoding fixtures, UsageLogic, Codex parsing,
+                            AccountManager and OMP sync against scripted runners
 ```
 
-Dependency rule: `UsageLogic` imports Foundation only. `MeridianClient`
-knows nothing about views. Views read `UsageStore` and never call the
-client directly (except via store actions like `switchProfile`).
+Dependency rule: `UsageLogic` imports Foundation only. Clients and the
+actors know nothing about views. Views read `UsageStore` and never call a
+client or actor directly; every mutation is a store action, and account
+actions are serialized (`accountOperation`) so two CLIs never race on the
+same credential file. Subprocesses receive argv, never a shell string, and
+credential environment variables are stripped before launch.
 
 ## Data flow
 

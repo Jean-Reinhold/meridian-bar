@@ -109,16 +109,41 @@ Never a crash, never a modal, never a notification unless F9 opted in.
 - Timeout 5 s; failures flip to degraded state after 2 consecutive misses
   (one blip must not flap the bar).
 
-## 4. Explicit non-goals (v1)
+## 4. Explicit non-goals (v1) — revised 2026-09-07
 
 - No historical charts (candidate F12, needs `telemetry.db` — see
   `05-features.md`).
-- No management of Meridian itself (start/stop/login flows) beyond
-  deep-linking to the dashboard; MeridianBar is read-mostly, the only
-  mutation is profile switching.
-- No network access other than the loopback Meridian endpoint. This is a
-  privacy guarantee worth stating in the README, not just an
-  implementation detail.
+- ~~No management of Meridian itself (start/stop/login flows)~~ Superseded
+  by owner decision 12 (`STATUS.md`): the Accounts window adds, signs in,
+  switches, signs out, and removes Claude and Codex accounts, always by
+  running the official CLIs. Starting or stopping the proxy is still out
+  of scope.
+- Network access: the loopback Meridian endpoint, plus one fixed HTTPS
+  endpoint (`chatgpt.com/backend-api/wham/usage`) for Codex quota,
+  authenticated with the token the Codex CLI already holds. No other
+  hosts; no credential ever leaves the machine except to that endpoint.
+  Stated in the README.
+
+## 4a. Codex card and Accounts window (added 2026-09-07)
+
+- The dropdown leads with an **OpenAI Codex** card: email + plan badge,
+  every ChatGPT rate-limit window as a bar with % and reset countdown,
+  then "Recorded on this Mac": today's tokens (input / cached input /
+  output), all-time total and session count. Cached input is a subset of
+  input. Local counts are consumption, never money.
+- The bar label appends `| Codex NN%` (worst Codex window) after the
+  Claude segments, colored by the same thresholds.
+- **Accounts…** opens a window listing Claude accounts (Meridian profiles
+  and the default CLI login) and Codex accounts (current CLI login and
+  app-saved copies) with ACTIVE / OMP / SIGN-IN REQUIRED badges. Actions
+  per row: Use account, Sign in (again), Sign out, Remove. A form adds a
+  named account and starts the browser sign-in. One operation runs at a
+  time; it can be cancelled.
+- **OMP routing** section: toggle (default on) that keeps OMP's
+  `openai-codex` pool equal to the Codex accounts saved here, a status
+  line (`OMP routes through N OpenAI accounts, M managed here`), and
+  Sync now. Removing or signing out an account also removes it from OMP.
+  Rows OMP got elsewhere are reported, never deleted.
 
 
 ## 5. Design language — Liquid Glass, system-first

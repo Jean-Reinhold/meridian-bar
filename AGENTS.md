@@ -29,9 +29,14 @@ make run        # build + open the bundle
 
 ## Conventions
 
-- Swift 6 strict concurrency. State flows one way: `MeridianClient`
-  (stateless, `Sendable`) → `UsageStore` (`@MainActor @Observable`) →
-  views. No other state carriers.
+- Swift 6 strict concurrency. State flows one way: clients and actors
+  (`MeridianClient`, `CodexUsageClient`, `AccountManager`,
+  `OMPAccountSync`) → `UsageStore` (`@MainActor @Observable`) → views.
+  No other state carriers. Views call store actions only.
+- Every credential mutation runs an official CLI (`meridian`, `claude`,
+  `codex`, `omp`) through `CLIProcess` with argv, never a shell; tests
+  inject a scripted runner. Never write to another tool's credential
+  file or database directly; OMP's `agent.db` is opened read-only.
 - All computation (aliases, thresholds, countdowns, segments) lives in
   `UsageLogic` as pure functions — **every change there needs a test** in
   `Tests/MeridianBarTests`.

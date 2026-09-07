@@ -16,11 +16,17 @@ struct MeridianBarApp: App {
             UsageMenuView(store: store)
         } label: {
             Image(nsImage: MenuBarLabel.render(
-                segments: store.segments, offline: store.offline, style: store.labelStyle
+                segments: store.segments, offline: store.offline, style: store.labelStyle,
+                codex: store.codexSegment
             ))
         }
         .menuBarExtraStyle(.window)
 
+
+        Window("Accounts", id: "accounts") {
+            AccountsView(store: store)
+        }
+        .defaultSize(width: 620, height: 650)
         Settings {
             SettingsView(store: store)
         }

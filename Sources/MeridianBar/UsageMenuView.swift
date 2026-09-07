@@ -7,24 +7,42 @@ import SwiftUI
 /// of sitting on an opaque panel.
 struct UsageMenuView: View {
     let store: UsageStore
+    @Environment(\.openWindow) private var openWindow
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
-        Group {
-            if #available(macOS 26.0, *) {
-                GlassEffectContainer(spacing: 10) { content }
-            } else {
-                content
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Usage").font(.title3.bold())
+                Spacer()
+                Button("Accounts…") {
+                    openWindow(id: "accounts")
+                    NSApp.activate(ignoringOtherApps: true)
+                }
             }
+            ScrollView {
+                Group {
+                    if #available(macOS 26.0, *) {
+                        GlassEffectContainer(spacing: 10) { content }
+                    } else {
+                        content
+                    }
+                }
+                .padding(2)
+            }
+            .frame(maxHeight: 610)
+            actions
         }
         .padding(12)
-        .frame(width: 340)
+        .frame(width: 420)
         .clearWindowBackground()
         .task { await store.refresh() }
     }
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
+            CodexUsageCard(snapshot: store.codex, ompPoolCount: store.omp.isManageable ? store.omp.entries.count : nil)
+            Text("Claude · Meridian").font(.headline)
             if let banner = offlineBanner {
                 Label(banner, systemImage: "bolt.slash.fill")
                     .font(.callout)
@@ -39,12 +57,11 @@ struct UsageMenuView: View {
                 AccountCard(store: store, segment: segment)
             }
             if store.segments.isEmpty && !store.offline {
-                Text("No profiles configured — run `meridian profile add <name>`.")
+                Text("No Claude profiles. Add an account from Accounts.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             footer
-            actions
         }
     }
 
@@ -133,6 +150,7 @@ struct AccountCard: View {
                 }
                 .glassButton()
                 .controlSize(.small)
+                .disabled(!store.canManageAccounts || store.offline)
             }
         }
         .padding(12)

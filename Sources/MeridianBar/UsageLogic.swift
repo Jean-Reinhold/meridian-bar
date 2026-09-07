@@ -152,6 +152,15 @@ enum UsageLogic {
         }
     }
 
+    static func codexSegment(windows: [QuotaWindow]) -> ProfileSegment {
+        let utilizations = windows.compactMap(\.utilization).filter(\.isFinite)
+        return ProfileSegment(
+            id: "codex", alias: "Codex",
+            percent: percent(utilizations.first),
+            status: utilizations.map { status(utilization: $0) }.max() ?? .ok,
+            isActive: true)
+    }
+
     /// Flat "profileId|windowType" → status map for notification diffing.
     static func statuses(quota: QuotaAll?) -> [String: UsageStatus] {
         var out: [String: UsageStatus] = [:]

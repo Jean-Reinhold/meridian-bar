@@ -5,6 +5,28 @@ All notable changes to MeridianBar. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- OpenAI Codex card in the dropdown: account-wide ChatGPT quota windows with
+  reset countdowns, plus token consumption recorded on this Mac (today, all
+  time, session count) read from local Codex session files. A `Codex NN%`
+  segment joins the bar label.
+- Accounts window: Claude (Meridian profiles and the default CLI login) and
+  Codex (current CLI login and saved copies). Add, sign in again, switch,
+  sign out, and remove, all through the official `meridian`, `claude`, and
+  `codex` commands. Codex sign-ins run in an isolated home and never touch
+  `~/.codex/auth.json` until you choose "Use account".
+- OMP routing: saved Codex accounts are imported into OMP's `openai-codex`
+  credential pool so OMP load-balances GPT requests across them. Sign-out
+  and removal drop the account from OMP again. Toggle in the Accounts window.
+- `--render-preview` also renders `accounts.png` and a light dropdown.
+
+### Changed
+
+- The dropdown is wider (420 pt) and scrolls; an Accounts… button opens the
+  new window. The app now talks to `chatgpt.com` for Codex quota in addition
+  to the loopback Meridian endpoint.
+
 ## [0.1.0] - 2026-08-06
 
 ### Added

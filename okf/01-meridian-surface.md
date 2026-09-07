@@ -158,3 +158,65 @@ high**. MeridianBar uses the identical thresholds so both UIs always agree
   in `05-features.md` revisits this for history sparklines, behind the same
   caveat.)
 - No talking to Anthropic directly — Meridian owns auth; we never see tokens.
+
+## Codex and account management, verified 2026-09-07
+
+The owner requested local Codex consumption and account management from the bar.
+This extends the original read-only, loopback-only scope.
+
+- Live Meridian 1.60.0 still returns the documented health and profile fields.
+- Installed Meridian 1.60.0 implements `profile add <name>`,
+  `profile login <name>`, and `profile remove <name>`. Names accept letters,
+  digits, hyphens, and underscores. Add and login invoke `claude auth login`
+  with the profile's `CLAUDE_CONFIG_DIR`. Add can first prompt to import the
+  default Claude login. Removal updates the profile registry and deletes
+  Meridian-owned profile directories. The proxy reloads profile changes.
+- Installed Claude supports `auth login`, `auth logout`, and `auth status`.
+- Installed Codex supports `login`, `login status`, and `logout`.
+  The current file-based login is in `~/.codex/auth.json`, with `auth_mode`,
+  `tokens`, and `last_refresh`. The token object has `id_token`,
+  `access_token`, `refresh_token`, and `account_id`.
+- A live authenticated GET to `https://chatgpt.com/backend-api/wham/usage`
+  returned HTTP 200. Authentication uses a bearer access token and
+  `ChatGPT-Account-Id`. The response includes `plan_type`, `rate_limit`,
+  `code_review_rate_limit`, `additional_rate_limits`, and `credits`.
+  Rate-limit windows use `used_percent`, `limit_window_seconds`,
+  `reset_after_seconds`, and `reset_at`. Windows may be null.
+
+Credentials and real account values are not recorded here. Usage requests must
+use the fixed ChatGPT endpoint, never a user-supplied credential destination.
+Local Codex session usage is separate from account-wide quota. The UI must label
+these scopes separately and must not present local token counts as billed cost.
+
+## OMP OpenAI account pool, verified 2026-09-07
+
+The owner wants OMP's GPT traffic to use the Codex accounts saved in the bar.
+OMP (`omp` 18.1.13, `@oh-my-pi/pi-ai` 17.4.0) keeps one credential pool per
+provider and load-balances requests across every `openai-codex` row.
+
+- Store: `~/.omp/agent/agent.db` (`PI_CODING_AGENT_DIR` overrides the
+  directory), table `auth_credentials` with `provider`, `credential_type`,
+  `data` (JSON with `access`, `refresh`, `expires`, `email`, `accountId`),
+  `disabled_cause` (NULL when active), `identity_key`. The app opens this
+  file read-only and reads only `email` and `accountId`.
+- Add or refresh: `omp auth-broker import <dir> --provider=openai-codex --json`
+  reads CLIProxyAPI-style JSON files (`type`, `access_token`,
+  `refresh_token`, `id_token`, `expired` RFC 3339, `email`, `account_id`).
+  Rows are matched by identity, so re-importing an account replaces its row.
+  Files without a parseable `expired` are skipped; the app derives it from
+  the access token's `exp` claim.
+- Clear: `omp auth-broker logout openai-codex` soft-deletes every row for the
+  provider. There is no per-row removal command. Removing one account
+  therefore means clear, then re-import the remaining ones, and is refused
+  when the pool holds a row the app does not manage.
+- Remote broker: when `auth.broker.url` is set in `~/.omp/agent/config.yml`
+  (or `OMP_AUTH_BROKER_URL`), OMP ignores the local store. The app then
+  reports the pool as not manageable.
+- Refresh tokens are copied, not shared. After import, OMP and the Codex CLI
+  refresh their own copy. Whether OpenAI invalidates the older refresh token
+  after a rotation is `[unverified]`; the recovery path is "Sign in again",
+  which re-imports the fresh login.
+
+Live check 2026-09-07: the pool held one active `openai-codex` row with the
+same identity as `~/.codex/auth.json`; launching the app marked it routed and
+ran no import (no staging directory was created, row data unchanged).
