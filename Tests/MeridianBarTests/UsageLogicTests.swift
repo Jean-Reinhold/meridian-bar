@@ -164,6 +164,31 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
         #expect(segs.count == 3)
         #expect(segs.allSatisfy { $0.percent == nil && $0.status == .ok })
     }
+
+    @Test func missingTokenShowsLoginEvenWhenProfileClaimsLoggedIn() throws {
+        let quota = QuotaAll(profiles: [
+            ProfileQuota(id: "work", error: "no_token", windows: []),
+            ProfileQuota(id: "home", windows: [QuotaWindow(type: "five_hour", utilization: 0)])
+        ])
+        let profiles = ProfilesList(profiles: [
+            ProfileInfo(id: "work", loggedIn: true), ProfileInfo(id: "home", loggedIn: true)
+        ])
+        let segments = UsageLogic.segments(quota: quota, profiles: profiles)
+        let missing = try #require(segments.first { $0.id == "work" })
+        #expect(missing.needsLogin)
+        #expect(missing.percent == nil)
+        let label = MenuBarLabel.attributedText(segments: segments, offline: false).string
+        #expect(label.contains("work login"))
+        #expect(label.contains("home 0"))
+    }
+
+    @Test func signedOutProfileShowsLoginWithoutQuotaError() throws {
+        let profiles = ProfilesList(profiles: [ProfileInfo(id: "work", loggedIn: false)])
+        let segment = try #require(UsageLogic.segments(quota: nil, profiles: profiles).first)
+        #expect(segment.needsLogin)
+        #expect(MenuBarLabel.attributedText(
+            segments: [segment], offline: false, style: .worst).string == "work login")
+    }
 }
 
 @Suite struct ExhaustedDecoding {

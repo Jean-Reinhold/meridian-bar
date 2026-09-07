@@ -33,6 +33,10 @@ All notable changes to MeridianBar. Format follows
 
 ### Fixed
 
+- The usage popover no longer collapses its scroll area when opened.
+- Claude profiles with missing credentials show `login` in the bar and a
+  sign-in explanation in the card. Quota errors and empty data also have
+  explicit messages.
 - The Accounts window no longer opens by itself: it was declared as a
   SwiftUI `Window` scene, which macOS opens at launch as the app's main
   window and brought to front when the bar was clicked, hiding the usage

@@ -5,6 +5,15 @@ over older docs until those docs are revised.
 
 ## State
 
+- **2026-09-07 popover fix, 80/80 tests passed:** the scroll view had only
+  a maximum height, so `MenuBarExtra` could collapse it. A fixed 610 pt
+  viewport keeps account cards visible and scrollable. Live Meridian
+  1.60.0 returned `no_token` for one profile while the proxy was healthy.
+  The bar now shows `login` for missing credentials or a signed-out profile.
+  Cards explain missing credentials, API-key quota limitations, other quota
+  errors, and empty data instead of leaving a blank body. Built and relaunched
+  with `make run`; the owner reported testing the fix. Agent-side light/dark
+  interaction checks were blocked by macOS Accessibility permission.
 - **2026-09-07 follow-up (78/78 tests):** owner reported the bar click
   showing only accounts, no per-account bars or reset times. Cause: the
   Accounts `Window` scene in the app body — SwiftUI opens the first window

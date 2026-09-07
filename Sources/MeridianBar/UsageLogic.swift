@@ -22,6 +22,7 @@ struct ProfileSegment: Equatable, Sendable {
     /// Worst status across ALL windows — drives color (okf/02 §1).
     var status: UsageStatus
     var isActive: Bool
+    var needsLogin = false
 }
 
 enum UsageLogic {
@@ -126,6 +127,7 @@ enum UsageLogic {
             uniqueKeysWithValues: (quota?.profiles ?? []).map { ($0.id, $0) }
         )
         let listed = profiles?.profiles.map(\.id) ?? []
+        let signedOut = Set(profiles?.profiles.filter { $0.loggedIn == false }.map(\.id) ?? [])
         let order = (profiles?.profileOrder ?? []).filter { listed.contains($0) || quotaById[$0] != nil }
         var ids = order.isEmpty ? (listed.isEmpty ? Array(quotaById.keys).sorted() : listed) : order
         for id in listed where !ids.contains(id) { ids.append(id) }
@@ -147,7 +149,8 @@ enum UsageLogic {
                 alias: aliasMap[id] ?? String(id.prefix(4)),
                 percent: percent(primary ?? worstUtil),
                 status: worstStatus,
-                isActive: id == active
+                isActive: id == active,
+                needsLogin: quotaById[id]?.error == "no_token" || signedOut.contains(id)
             )
         }
     }

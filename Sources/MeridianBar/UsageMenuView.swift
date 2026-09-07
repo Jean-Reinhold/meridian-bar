@@ -26,7 +26,8 @@ struct UsageMenuView: View {
                 }
                 .padding(2)
             }
-            .frame(maxHeight: 610)
+            // A maximum alone lets MenuBarExtra collapse the scroll viewport.
+            .frame(height: 610)
             actions
         }
         .padding(12)
@@ -139,6 +140,21 @@ struct AccountCard: View {
         VStack(alignment: .leading, spacing: 6) {
             header
             windows
+            if segment.needsLogin {
+                Text("Usage unavailable. Open Accounts and sign in to this Claude profile.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else if let error = quota?.error {
+                Text(error == "not_oauth"
+                     ? "This API-key profile has no OAuth usage quota."
+                     : "Usage unavailable: \(error)")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else if quota?.windows?.isEmpty != false {
+                Text("No usage data returned for this profile.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
             extraUsage
             if !segment.isActive {
                 Button("Switch to \(segment.alias)") {
@@ -164,7 +180,7 @@ struct AccountCard: View {
                 if store.profiles?.exhausted?.contains(where: { $0.id == segment.id }) == true {
                     Badge(text: "EXHAUSTED", color: .red)
                 }
-                if info?.loggedIn == false { Badge(text: "login required", color: .yellow) }
+                if segment.needsLogin { Badge(text: "login required", color: .yellow) }
             }
             if let email = info?.email {
                 Text(email).font(.caption).foregroundStyle(.secondary)

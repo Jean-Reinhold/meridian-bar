@@ -74,7 +74,7 @@ enum MenuBarLabel {
             let worst = segments.max {
                 ($0.status, $0.percent ?? -1) < ($1.status, $1.percent ?? -1)
             }!
-            let number = worst.percent.map(String.init) ?? "–"
+            let number = worst.needsLogin ? "login" : worst.percent.map(String.init) ?? "–"
             return NSAttributedString(string: "\(worst.alias) \(number)", attributes: [
                 .font: boldFont, .foregroundColor: color(for: worst.status),
             ])
@@ -92,7 +92,7 @@ enum MenuBarLabel {
                 .foregroundColor: color(for: seg.status),
             ]
             if seg.isActive { attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue }
-            let number = seg.percent.map(String.init) ?? "–"
+            let number = seg.needsLogin ? "login" : seg.percent.map(String.init) ?? "–"
             out.append(NSAttributedString(string: "\(seg.alias) \(number)", attributes: attrs))
         }
         return out
