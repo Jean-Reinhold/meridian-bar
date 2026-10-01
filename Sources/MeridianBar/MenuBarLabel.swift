@@ -74,7 +74,7 @@ enum MenuBarLabel {
             let worst = segments.max {
                 ($0.status, $0.percent ?? -1) < ($1.status, $1.percent ?? -1)
             }!
-            let number = worst.needsLogin ? "login" : worst.percent.map(String.init) ?? "–"
+            let number = worst.needsLogin ? "login" : value(for: worst)
             return NSAttributedString(string: "\(worst.alias) \(number)", attributes: [
                 .font: boldFont, .foregroundColor: color(for: worst.status),
             ])
@@ -92,10 +92,15 @@ enum MenuBarLabel {
                 .foregroundColor: color(for: seg.status),
             ]
             if seg.isActive { attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue }
-            let number = seg.needsLogin ? "login" : seg.percent.map(String.init) ?? "–"
+            let number = seg.needsLogin ? "login" : value(for: seg)
             out.append(NSAttributedString(string: "\(seg.alias) \(number)", attributes: attrs))
         }
         return out
+    }
+
+    private static func value(for segment: ProfileSegment) -> String {
+        guard let percent = segment.percent else { return "–" }
+        return "\(percent)%" + (segment.weeklyPace?.direction.symbol ?? "")
     }
 
     static func color(for status: UsageStatus) -> NSColor {

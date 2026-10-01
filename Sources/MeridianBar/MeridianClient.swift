@@ -24,6 +24,7 @@ struct ProfileQuota: Codable, Equatable, Sendable {
     var fetchedAt: Double?
     var windows: [QuotaWindow]?
     var extraUsage: ExtraUsage?
+    var stale: Bool?
 }
 
 struct QuotaAll: Codable, Equatable, Sendable {

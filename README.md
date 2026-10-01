@@ -5,7 +5,7 @@ A native macOS menu bar app that watches **every Claude account** managed by
 usage — quota pressure per account, always visible, a live answer to "is the
 proxy even up?", and one place to sign in, switch, and remove accounts.
 
-<p align="center"><img src="docs/label.png" height="34" alt="Menu bar label — one colored segment per account: 7d Fable percent, active profile underlined, Codex worst-window percent"></p>
+<p align="center"><img src="docs/label.png" height="34" alt="Menu bar label with overall seven-day usage, weekly pace arrows, active profile underline, and Codex usage"></p>
 <p align="center"><img src="docs/dropdown.png" width="360" alt="Dropdown — Codex quota and local consumption, then per-account quota windows with reset countdowns, badges, and profile switching"></p>
 <p align="center"><sub>Staged data — real accounts never appear in this repo.</sub></p>
 
@@ -59,12 +59,18 @@ with `git submodule update --remote tap`.
 
 ## What you see
 
-- **In the bar** — one compact segment per profile: auto-abbreviated name +
-  **7d Fable** utilization (the binding constraint for Fable-tier usage),
-  colored by the *worst* window so it never looks green while something is
-  blocking. The active profile is underlined. A `Codex NN%` segment follows
-  when the Codex CLI is signed in. Meridian down → a gray `meridian ⏻`
-  marker, within one poll.
+- The bar shows each Claude profile's overall **7d usage percentage** by
+  default. It does not substitute Fable usage when weekly data is missing.
+  Colors still warn about the worst quota window. The active profile is
+  underlined. A `Codex NN%` segment follows when Codex is signed in.
+  If Meridian is unavailable, its segments become a gray offline marker.
+- Weekly pace arrows compare usage with elapsed time in the seven-day
+  window. `↑` means room to use more, `→` means within five percentage
+  points of an even pace, and `↓` means ahead of pace. Cached quota
+  readings omit the arrow. The dropdown shows remaining quota and a daily
+  budget until reset, or an hourly budget in the final day. These are
+  planning estimates, not automatic account switching or extra requests.
+  Five-hour and model-specific limits still apply.
 - **On click** — an OpenAI Codex card first: every ChatGPT rate-limit window
   as a bar with percentage and reset countdown, then tokens recorded on this
   Mac (today and all time, read from local Codex session files; consumption,

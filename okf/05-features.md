@@ -9,7 +9,7 @@ not when the code compiles. Milestones gate the order; nothing ships to
 
 | # | Feature | Acceptance criterion | Milestone |
 |---|---------|----------------------|-----------|
-| F1 | **All-accounts menu bar label** — one colored segment per profile: `alias fable%` (e.g. `paul 100 · pnr 100 · rein 34`), primary window `seven_day_fable` with worst-window fallback, color by worst-window status | Label shows every configured profile with its primary-window %, colored by worst-window status, readable in light + dark menu bars | M1 |
+| F1 | Per-profile menu bar segments with overall `seven_day` usage, weekly pace arrows, and worst-window warning colors | Missing weekly data stays unknown. Pace compares usage with time elapsed and omits cached estimates. | M1 |
 | F2 | **Polling** — quota/profiles/health every 60 s + on menu open, stale-response protection | Usage change in Meridian visible in ≤ 60 s; opening the menu refreshes immediately | M1 |
 | F3 | **Offline resilience** — Meridian down → gray `meridian off` label, last snapshot kept with data age | Killing Meridian degrades the label within one poll; restarting recovers without relaunching the app | M1 |
 | F4 | **Per-account dropdown cards** — alias + full id, plan badge, active badge, auth state, exhausted banner; one bar per quota window with % and reset countdown; extra-usage credits row when enabled; rendered in the Liquid Glass design language (`02-product-spec.md` §5) | Every window Meridian reports for a profile renders as a bar with countdown; unknown window types render via fallback label; glass materials verified in light + dark, with the macOS 14 material fallback | M2 |
@@ -18,7 +18,7 @@ not when the code compiles. Milestones gate the order; nothing ships to
 | F7 | **Actions** — Refresh now, Open Meridian dashboard (default browser → base URL), Quit | Each action performs its effect from the dropdown | M2 |
 | F8 | **Launch at login** — `SMAppService.mainApp` toggle | Toggle survives relaunch; app appears after logout/login when enabled | M3 |
 | F9 | **Label styles** — `segments` (default), `dots` (colored ● per account), `worst` (single worst-case %) | Style switchable in settings; all three render correctly with 1–5 profiles | M3 |
-| F10 | **Settings** — base URL (default `http://127.0.0.1:3456`), poll interval, label style, primary window (default `seven_day_fable`), per-profile alias overrides | Settings persist in `UserDefaults`; base URL change takes effect without relaunch | M3 |
+| F10 | Settings for the base URL, poll interval, label style, primary window with `seven_day` default, and profile aliases | Settings persist in `UserDefaults`; base URL changes take effect without relaunch | M3 |
 | F11 | **Threshold notifications** — user notification when a window crosses warn/high, becomes exhausted, or resets after exhaustion; per-transition (never repeated) | Crossing 85% fires exactly one notification; reset of an exhausted window fires one "back" notification; toggleable in settings | M3 |
 | F12 | **App icon + polish** — .icns, about panel, empty-state guidance when no profiles configured | App presents professionally in Finder/Spotlight; zero-profile state explains `meridian profile add` | M4 |
 | F13 | **Release pipeline & security CI** — CodeQL + dependency review + OpenSSF Scorecard; CI-only release builds: universal binary, ad-hoc signed (no Apple identity), checksummed zip on tag | Security workflows green on `main`; `git tag vX.Y.Z` produces a runnable artifact with published sha256 (`okf/06`) | M4 |
@@ -28,6 +28,7 @@ not when the code compiles. Milestones gate the order; nothing ships to
 | F17 | **Codex consumption** — dropdown card with account-wide ChatGPT quota windows (from `wham/usage`) and local token consumption parsed from `$CODEX_HOME/sessions` (today, all time, session count); `Codex NN%` segment in the bar label | Card shows every rate-limit window with % and reset; local totals match a manual sum of `token_count` deltas; API-key logins show local totals with quota marked unavailable | M5 |
 | F18 | **Accounts window** — list Claude (Meridian profiles + default CLI) and Codex (current CLI + saved copies) accounts with sign-in state; add, sign in again, switch, sign out, remove; every mutation through the official CLIs | Adding a Codex account runs `codex login` in an isolated home and never touches `~/.codex/auth.json` until "Use account"; Claude switch reorders Meridian routing and activates the profile | M5 |
 | F19 | **OMP routing** — saved Codex accounts are imported into OMP's `openai-codex` pool (toggle, default on); sign-out and removal drop them again; OMP-only rows are never deleted | With the toggle on, a newly added Codex account appears in `omp usage --provider openai-codex`; removing it makes it disappear while other rows survive | M5 |
+| F20 | Weekly subscription pacing with unused quota, reset countdown, and daily or hourly budget | Actual menu shows budgets derived from overall weekly quota and reset time; cached and unavailable data are identified; no automatic routing changes | M5 |
 
 ## Deliberately out of scope (v1)
 

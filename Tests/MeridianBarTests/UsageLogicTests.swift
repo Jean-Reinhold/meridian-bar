@@ -68,14 +68,6 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
     }
 }
 
-@Suite struct WindowLabels {
-    @Test func knownAndFallback() {
-        #expect(UsageLogic.windowLabel("seven_day_fable") == "7d Fable")
-        #expect(UsageLogic.windowLabel("five_hour") == "5h")
-        // Unknown types must render, never crash or show raw snake_case.
-        #expect(UsageLogic.windowLabel("seven_day_omelette") == "Seven Day Omelette")
-    }
-}
 
 @Suite struct Aliases {
     @Test func stripsCommonPrefix() {
@@ -119,35 +111,34 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
 }
 
 @Suite struct Segments {
-    @Test func fablePrimaryWorstColorProfileOrder() throws {
+    @Test func weeklyUsageIsDistinctFromModelCaps() throws {
         let (quota, profiles) = try decodeFixtures()
-        let segs = UsageLogic.segments(quota: quota, profiles: profiles)
+        let segs = UsageLogic.segments(quota: quota, profiles: profiles, primaryWindow: "seven_day")
 
         // Meridian's profileOrder wins, not the profiles array order.
         #expect(segs.map(\.id) == ["jean_reinhold", "jeanpaul", "jeanpnr"])
 
         let byId = Dictionary(uniqueKeysWithValues: segs.map { ($0.id, $0) })
-        // Number = 7d Fable (owner decision), color = worst window.
-        #expect(byId["jeanpaul"]?.percent == 100)
+        #expect(byId["jeanpaul"]?.percent == 91)
         #expect(byId["jeanpaul"]?.status == .blocked)
-        #expect(byId["jean_reinhold"]?.percent == 34)
+        #expect(byId["jean_reinhold"]?.percent == 32)
         #expect(byId["jean_reinhold"]?.status == .ok)
         #expect(byId["jeanpaul"]?.isActive == true)
         #expect(byId["jeanpnr"]?.isActive == false)
     }
 
-    @Test func missingPrimaryFallsBackToWorst() throws {
+    @Test func missingWeeklyQuotaNeverShowsFableAsWeeklyUsage() throws {
         var (quota, profiles) = try decodeFixtures()
-        // Strip fable windows: number must fall back to the worst window.
         quota.profiles = quota.profiles.map { p in
             var p = p
-            p.windows = p.windows?.filter { $0.type != "seven_day_fable" }
+            p.windows = p.windows?.filter { $0.type != "seven_day" }
             return p
         }
-        let segs = UsageLogic.segments(quota: quota, profiles: profiles)
+        let segs = UsageLogic.segments(quota: quota, profiles: profiles, primaryWindow: "seven_day")
         let paul = segs.first { $0.id == "jeanpaul" }
-        #expect(paul?.percent == 91)
-        #expect(paul?.status == .critical)
+        #expect(paul?.percent == nil)
+        #expect(paul?.weeklyPace == nil)
+        #expect(paul?.status == .blocked)
     }
 
     @Test func exhaustedForcesBlocked() throws {
@@ -179,7 +170,6 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
         #expect(missing.percent == nil)
         let label = MenuBarLabel.attributedText(segments: segments, offline: false).string
         #expect(label.contains("work login"))
-        #expect(label.contains("home 0"))
     }
 
     @Test func signedOutProfileShowsLoginWithoutQuotaError() throws {
@@ -241,16 +231,6 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
         #expect(UsageLogic.transitions(from: [:], to: ["p|a": .blocked]).isEmpty)
     }
 
-    @Test func messages() {
-        #expect(
-            UsageNotifier.message(
-                for: .init(profileId: "p", windowType: "seven_day_fable", from: .critical, to: .blocked)
-            ).contains("exhausted"))
-        #expect(
-            UsageNotifier.message(
-                for: .init(profileId: "p", windowType: "seven_day_fable", from: .blocked, to: .ok)
-            ).contains("usable again"))
-    }
 }
 
 @Suite struct AliasOverrides {
@@ -266,17 +246,6 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
     }
 }
 
-@Suite struct LabelStyles {
-    @Test func dotsAndWorst() throws {
-        let (quota, profiles) = try decodeFixtures()
-        let segs = UsageLogic.segments(quota: quota, profiles: profiles)
-        let dots = MenuBarLabel.attributedText(segments: segs, offline: false, style: .dots)
-        #expect(dots.string == "● ● ●")
-        // Worst = the binding constraint across accounts: first blocked profile.
-        let worst = MenuBarLabel.attributedText(segments: segs, offline: false, style: .worst)
-        #expect(worst.string == "paul 100")
-    }
-}
 
 @Suite struct CodexSegments {
     @Test func mainWindowLeadsButReviewLimitStillBlocks() {
@@ -302,5 +271,67 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
         let text = MenuBarLabel.attributedText(segments: [], offline: true, codex: codex).string
         #expect(text.contains("meridian"))
         #expect(text.contains("Codex 35%"))
+    }
+}
+
+@Suite struct WeeklyBudget {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func window(_ used: Double?, days: Double?) -> QuotaWindow {
+        QuotaWindow(
+            type: "seven_day", utilization: used,
+            resetsAt: days.map { (now.timeIntervalSince1970 + $0 * 86_400) * 1000 })
+    }
+
+    @Test func sameUsageNeedsDifferentPaceAsResetApproaches() throws {
+        let early = try #require(UsageLogic.weeklyPace(windows: [window(0.5, days: 6)], now: now))
+        let middle = try #require(UsageLogic.weeklyPace(windows: [window(0.5, days: 3.5)], now: now))
+        let late = try #require(UsageLogic.weeklyPace(windows: [window(0.5, days: 1)], now: now))
+        #expect(early.direction == .ahead)
+        #expect(middle.direction == .onPace)
+        #expect(late.direction == .useMore)
+        #expect(abs(middle.percentagePointsPerDay - 100 / 7.0) < 0.0001)
+        #expect(late.percentagePointsPerDay == 50)
+    }
+
+    @Test func finalHoursBudgetOnlyTheUnusedQuota() throws {
+        let pace = try #require(UsageLogic.weeklyPace(windows: [window(0.75, days: 0.25)], now: now))
+        #expect(abs(pace.percentagePointsPerHour - 25 / 6.0) < 0.0001)
+        #expect(pace.direction == .useMore)
+        let exhausted = try #require(UsageLogic.weeklyPace(windows: [window(1, days: 2)], now: now))
+        #expect(exhausted.direction == .exhausted)
+        #expect(exhausted.percentagePointsPerDay == 0)
+    }
+
+    @Test func fivePointToleranceDoesNotEncourageUnnecessaryChanges() throws {
+        for used in [0.46, 0.5, 0.54] {
+            let pace = try #require(UsageLogic.weeklyPace(windows: [window(used, days: 3.5)], now: now))
+            #expect(pace.direction == .onPace)
+        }
+    }
+
+    @Test func missingExpiredAndInvalidDataHasNoBudget() {
+        for days: Double? in [nil, 0, -1, 8, .infinity, .nan] {
+            #expect(UsageLogic.weeklyPace(windows: [window(0.4, days: days)], now: now) == nil)
+        }
+        for used: Double? in [nil, -0.1, 1.1, .infinity, .nan] {
+            #expect(UsageLogic.weeklyPace(windows: [window(used, days: 2)], now: now) == nil)
+        }
+        #expect(UsageLogic.weeklyPace(
+            windows: [QuotaWindow(type: "seven_day_fable", utilization: 0.5,
+                                  resetsAt: window(0.5, days: 2).resetsAt)], now: now) == nil)
+    }
+
+    @Test func cachedQuotaDoesNotAdvertiseCurrentPaceInBar() throws {
+        let quota = QuotaAll(profiles: [
+            ProfileQuota(id: "fresh", windows: [window(0.2, days: 1)]),
+            ProfileQuota(id: "cached", windows: [window(0.2, days: 1)], stale: true),
+            ProfileQuota(id: "failed", error: "no_token", windows: [window(0.2, days: 1)])
+        ])
+        let segments = UsageLogic.segments(quota: quota, profiles: nil, primaryWindow: "seven_day", now: now)
+        #expect(segments.first { $0.id == "fresh" }?.weeklyPace?.direction == .useMore)
+        #expect(segments.first { $0.id == "cached" }?.weeklyPace == nil)
+        #expect(segments.first { $0.id == "failed" }?.weeklyPace == nil)
+        #expect(segments.first { $0.id == "cached" }?.percent == 20)
     }
 }

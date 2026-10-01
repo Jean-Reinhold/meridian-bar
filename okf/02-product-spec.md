@@ -1,33 +1,33 @@
 # Product spec
 
-What MeridianBar shows and how it behaves. The design premise, confirmed
-with the primary user: **the collapsed menu bar item summarizes all
-accounts at once; the dropdown gives full per-account detail; profiles are
-always identified by name, never anonymous.** Two later owner decisions
-(2026-08-06): the **7d Fable window is the number that matters most** —
-it leads everywhere a single number is shown — and the app doubles as the
-**Meridian uptime monitor**: the bar must answer "is the proxy up?" at a
-glance, at all times.
+The collapsed menu bar summarizes all accounts. The dropdown gives
+per-account detail, and each profile has a name.
+
+The owner selected overall seven-day usage as the primary number on
+2026-10-01, replacing the earlier Fable preference. Weekly pacing uses
+both utilization and time until reset. Meridian availability remains
+visible in the bar.
 
 ## 1. Menu bar label (collapsed state)
 
 One compact segment **per profile**, in Meridian's `profileOrder`:
 
 ```
-paul 91 · pnr 52 · rein 32
+paul 62%↑ · rein 93%↓ · pnr 39%↑
 ```
 
 - **Identifier** — a short alias derived from the profile id (see
   `04-architecture.md` §3). Falls back to the raw id truncated to 4 chars.
   User-overridable per profile in Settings.
-- **Number** — the profile's **primary window** utilization as an integer
-  percent. Primary window defaults to `seven_day_fable` (owner decision:
-  the Fable quota is the binding constraint that matters); configurable in
-  Settings (F10). Profiles without the primary window fall back to their
-  **worst** window. The dropdown always shows every window regardless.
-- **Color** — always driven by the profile's **worst** window, never just
-  the primary: the label may *show* Fable, but it must never look green
-  while another window is blocking requests.
+- The number is the selected window's utilization as an integer percentage.
+  It defaults to `seven_day` and remains configurable in Settings.
+  Missing selected-window data displays an unknown value, not another quota.
+- Weekly arrows compare usage with the elapsed fraction of seven days.
+  `↑` means usage is more than five percentage points below that fraction.
+  `↓` means usage is more than five points above it. Otherwise, `→` means
+  on pace. Missing, expired, invalid, or cached data omits the arrow.
+- Color continues to reflect the worst quota window, so a weekly pacing
+  estimate cannot hide an exhausted five-hour or model-specific limit.
 - **Thresholds** — Meridian's own, so both UIs
   agree: normal < 60% (primary label color), warn ≥ 60% (yellow),
   critical ≥ 85% (red). A profile listed in `exhausted[]` or with any
@@ -58,6 +58,13 @@ Header row:
 - Badges: `ACTIVE` (blue) on the routed profile; plan type (`max`);
   `EXHAUSTED` (red) when in `exhausted[]`; `⚠ login required` (yellow)
   when `loggedIn == false`.
+
+Weekly planning precedes the quota rows. Each card shows unused weekly
+quota, the even-pace target, and time until reset. Divide the remaining
+percentage by remaining days to calculate the daily budget. During the
+final day, show an hourly budget instead. Cached readings are marked as
+estimates. Missing or expired reset times show an unavailable explanation.
+This guidance does not switch accounts or generate traffic.
 
 Body — one row per quota window, every window the API returns (dynamic,
 never a hardcoded set):

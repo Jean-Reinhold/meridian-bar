@@ -41,6 +41,9 @@ struct SettingsView: View {
                 Text("The color always tracks each account's worst window.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Text("For 7d usage, arrows compare usage with time elapsed: ↑ room to use more, → on pace, ↓ ahead. Open the menu for the remaining daily budget.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Profile names in the bar") {

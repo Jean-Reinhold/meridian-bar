@@ -40,6 +40,9 @@ struct UsageMenuView: View {
         VStack(alignment: .leading, spacing: 10) {
             CodexUsageCard(snapshot: store.codex, ompPoolCount: store.omp.isManageable ? store.omp.entries.count : nil)
             Text("Claude · Meridian").font(.headline)
+            Text("7d pace: ↑ room to use more · → on pace · ↓ ahead")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             if let banner = offlineBanner {
                 Label(banner, systemImage: "bolt.slash.fill")
                     .font(.callout)
@@ -139,6 +142,7 @@ struct AccountCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             header
+            weeklyBudget
             windows
             if segment.needsLogin {
                 Text("Usage unavailable. Open Accounts and sign in to this Claude profile.")
@@ -184,6 +188,46 @@ struct AccountCard: View {
             }
             if let email = info?.email {
                 Text(email).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder private var weeklyBudget: some View {
+        if !segment.needsLogin, quota?.error == nil {
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                if let pace = UsageLogic.weeklyPace(windows: quota?.windows ?? [], now: context.date) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(pace.direction.label).font(.callout.bold())
+                        Text("\(pace.remaining * 100, specifier: "%.1f")% left · \(pace.expected * 100, specifier: "%.0f")% would be used at an even pace")
+                            .font(.caption)
+                        if let weekly = quota?.windows?.first(where: { $0.type == "seven_day" }),
+                           let reset = UsageLogic.resetCountdown(resetsAtMs: weekly.resetsAt, now: context.date) {
+                            Text("Weekly reset \(reset)").font(.caption)
+                        }
+                        if pace.remaining > 0 {
+                            if pace.secondsRemaining >= 86_400 {
+                                Text("Budget \(pace.percentagePointsPerDay, specifier: "%.1f")% of the weekly quota per day until reset.")
+                                    .font(.caption)
+                            } else {
+                                Text("Budget \(pace.percentagePointsPerHour, specifier: "%.1f")% of the weekly quota per hour until reset.")
+                                    .font(.caption)
+                            }
+                        }
+                        if quota?.stale == true {
+                            Text("Cached quota estimate. Refresh to confirm.")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
+                        Text("Planning guide only. Five-hour and model limits still apply.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                } else {
+                    Text("Weekly pace unavailable until usage and a future reset time are known.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

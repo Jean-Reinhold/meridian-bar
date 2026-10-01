@@ -23,6 +23,46 @@ struct ProfileSegment: Equatable, Sendable {
     var status: UsageStatus
     var isActive: Bool
     var needsLogin = false
+    var weeklyPace: WeeklyPace?
+}
+
+struct WeeklyPace: Equatable, Sendable {
+    var used: Double
+    var expected: Double
+    var secondsRemaining: TimeInterval
+
+    var remaining: Double { 1 - used }
+    var percentagePointsPerDay: Double { remaining * 100 * 86_400 / secondsRemaining }
+    var percentagePointsPerHour: Double { percentagePointsPerDay / 24 }
+
+    var direction: Direction {
+        if used >= 1 { return .exhausted }
+        if used < expected - 0.05 { return .useMore }
+        if used > expected + 0.05 { return .ahead }
+        return .onPace
+    }
+
+    enum Direction: Sendable {
+        case useMore, onPace, ahead, exhausted
+
+        var symbol: String {
+            switch self {
+            case .useMore: "↑"
+            case .onPace: "→"
+            case .ahead: "↓"
+            case .exhausted: ""
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .useMore: "Room to use more"
+            case .onPace: "On weekly pace"
+            case .ahead: "Ahead of weekly pace"
+            case .exhausted: "Weekly quota exhausted"
+            }
+        }
+    }
 }
 
 enum UsageLogic {
@@ -35,8 +75,7 @@ enum UsageLogic {
         return .ok
     }
 
-    /// Owner decision: the 7d Fable window leads wherever one number is shown.
-    static let defaultPrimaryWindow = "seven_day_fable"
+    static let defaultPrimaryWindow = "seven_day"
 
     static let windowLabels: [String: String] = [
         "five_hour": "5h",
@@ -114,14 +153,25 @@ enum UsageLogic {
         return Int((min(max(u, 0), 1) * 100).rounded())
     }
 
-    /// One segment per profile, in Meridian's profileOrder. The number is the
-    /// primary window (fallback: worst window); the color is always the worst
-    /// window (okf/02 §1).
+    /// Compare overall weekly usage with an even seven-day budget.
+    static func weeklyPace(windows: [QuotaWindow], now: Date = Date()) -> WeeklyPace? {
+        guard let window = windows.first(where: { $0.type == "seven_day" }),
+              let used = window.utilization, used.isFinite, (0...1).contains(used),
+              let reset = window.resetsAt, reset.isFinite else { return nil }
+        let remaining = reset / 1000 - now.timeIntervalSince1970
+        let week = 7 * 86_400.0
+        guard remaining > 0, remaining <= week else { return nil }
+        return WeeklyPace(used: used, expected: 1 - remaining / week, secondsRemaining: remaining)
+    }
+
+    /// Keep Meridian's profile order and worst-window warning colors.
+    /// Missing primary-window data stays unknown instead of showing another quota.
     static func segments(
         quota: QuotaAll?,
         profiles: ProfilesList?,
         primaryWindow: String = defaultPrimaryWindow,
-        aliasOverrides: [String: String] = [:]
+        aliasOverrides: [String: String] = [:],
+        now: Date = Date()
     ) -> [ProfileSegment] {
         let quotaById = Dictionary(
             uniqueKeysWithValues: (quota?.profiles ?? []).map { ($0.id, $0) }
@@ -140,17 +190,19 @@ enum UsageLogic {
         return ids.map { id in
             let windows = quotaById[id]?.windows ?? []
             let primary = windows.first { $0.type == primaryWindow }?.utilization
-            let worstUtil = windows.compactMap(\.utilization).max()
             var worstStatus = windows.map { status(utilization: $0.utilization) }.max()
                 ?? UsageStatus.ok
             if exhausted.contains(id) { worstStatus = .blocked }
             return ProfileSegment(
                 id: id,
                 alias: aliasMap[id] ?? String(id.prefix(4)),
-                percent: percent(primary ?? worstUtil),
+                percent: percent(primary),
                 status: worstStatus,
                 isActive: id == active,
-                needsLogin: quotaById[id]?.error == "no_token" || signedOut.contains(id)
+                needsLogin: quotaById[id]?.error == "no_token" || signedOut.contains(id),
+                weeklyPace: primaryWindow == "seven_day" && quotaById[id]?.error == nil
+                    && quotaById[id]?.stale != true && !signedOut.contains(id)
+                    ? weeklyPace(windows: windows, now: now) : nil
             )
         }
     }

@@ -7,6 +7,10 @@ All notable changes to MeridianBar. Format follows
 
 ### Added
 
+- Weekly subscription pacing from overall seven-day usage and time until reset.
+  Menu bar arrows show room to use more, an even pace, or usage ahead of pace.
+  Account cards show unused quota, reset time, and a daily or hourly budget.
+  Cached readings are marked as estimates and omit menu bar pace arrows.
 - OpenAI Codex card in the dropdown: account-wide ChatGPT quota windows with
   reset countdowns, plus token consumption recorded on this Mac (today, all
   time, session count) read from local Codex session files. A `Codex NN%`
@@ -23,6 +27,9 @@ All notable changes to MeridianBar. Format follows
 
 ### Changed
 
+- Claude menu bar percentages default to overall `seven_day` usage instead of
+  `seven_day_fable`. A missing selected window stays unknown rather than
+  substituting another quota. Worst-window warning colors remain unchanged.
 - The dropdown is wider (420 pt) and scrolls; an Accounts… button opens the
   new window. The app now talks to `chatgpt.com` for Codex quota in addition
   to the loopback Meridian endpoint.

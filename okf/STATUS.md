@@ -1,10 +1,19 @@
-# Status — 2026-09-07
+# Status as of 2026-10-01
 
 Living log. Update on every meaningful state change; newest facts here win
 over older docs until those docs are revised.
 
 ## State
 
+- **2026-10-01 weekly usage and pacing.** Changed the primary Claude
+  percentage from Fable to overall seven-day usage. Added pace arrows,
+  unused quota, reset countdown, and remaining daily or hourly budgets.
+  Missing weekly data stays unknown; cached estimates are identified.
+  Built with the installed macOS 26.5 SDK and passed 82 tests.
+  Installed and relaunched `/Applications/MeridianBar.app`.
+  Native screenshots and accessibility inspection confirmed the weekly
+  numbers, arrows, hourly budget, daily budgets, and cached-data warnings.
+  Routing and quota limits were not changed.
 - **2026-09-07 popover fix, 80/80 tests passed:** the scroll view had only
   a maximum height, so `MenuBarExtra` could collapse it. A fixed 610 pt
   viewport keeps account cards visible and scrollable. Live Meridian
@@ -114,8 +123,9 @@ Confirmed with the project owner (2026-08-06):
 6. Contribution pathway: Discussions, issue/PR templates, CONTRIBUTING
    (`okf/06`).
 7. Visual design: Liquid Glass / native Apple (`okf/02` §5).
-8. **7d Fable quota is the primary number** — leads the bar label; color
-   still tracks the worst window (`okf/02` §1).
+8. Overall **7d usage is the primary number**, updated 2026-10-01.
+   Weekly pacing also accounts for time until reset. Color still warns
+   about the worst quota window.
 9. **No Apple affiliation, ever** — ad-hoc signing + sha256 + Sparkle
    EdDSA (`okf/06`). Final; do not re-raise.
 10. The app doubles as the **Meridian uptime monitor** (`okf/02`).
