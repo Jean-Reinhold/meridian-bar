@@ -86,6 +86,16 @@ This explicit SDK selection leaves the system SDK and SwiftUI source unchanged.
 `make run` opens the build in `dist`; it does not update `/Applications`.
 Quit the installed app before replacing its bundle.
 
+Verified 2026-11-25 with Swift 6.4.2: `swift test` no longer finds the
+`TestingMacros` plugin on its own. The Makefile passes
+`usr/lib/swift/host/plugins/testing` as `-plugin-path` on Command Line
+Tools hosts. The repo sits in iCloud Drive, and its File Provider adds
+`com.apple.FinderInfo` to the copied Sparkle bundle. `codesign` rejects
+that as detritus, so `make app` clears extended attributes on the
+framework before signing it. The File Provider can add the attribute
+again after signing, so `make install` copies with
+`ditto --noextattr --norsrc`.
+
 ## Concurrency model
 
 Swift 6 strict concurrency on. One `@MainActor @Observable` store; the

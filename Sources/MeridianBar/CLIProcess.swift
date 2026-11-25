@@ -9,7 +9,7 @@ import os
 // `meridian profile add` dies together with Meridian.
 
 enum CLITool: String, Sendable {
-    case claude, codex, meridian, omp
+    case claude, meridian
 }
 
 struct CLIPromptReply: Equatable, Sendable {
@@ -58,7 +58,7 @@ struct CLIToolLocator: Sendable {
 
     private static let systemBinDirectories = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
     private static let homeBinDirectories = [
-        ".local/bin", ".npm-global/bin", ".volta/bin", ".bun/bin", ".cargo/bin", ".claude/local",
+        ".local/bin", ".npm-global/bin", ".volta/bin", ".bun/bin", ".claude/local",
     ]
 
     /// PATH entries first, then the usual install locations, deduplicated.

@@ -15,18 +15,9 @@ All notable changes to MeridianBar. Format follows
   Menu bar arrows show room to use more, an even pace, or usage ahead of pace.
   Account cards show unused quota, reset time, and a daily or hourly budget.
   Cached readings are marked as estimates and omit menu bar pace arrows.
-- OpenAI Codex card in the dropdown: account-wide ChatGPT quota windows with
-  reset countdowns, plus token consumption recorded on this Mac (today, all
-  time, session count) read from local Codex session files. A `Codex NN%`
-  segment joins the bar label.
-- Accounts window: Claude (Meridian profiles and the default CLI login) and
-  Codex (current CLI login and saved copies). Add, sign in again, switch,
-  sign out, and remove, all through the official `meridian`, `claude`, and
-  `codex` commands. Codex sign-ins run in an isolated home and never touch
-  `~/.codex/auth.json` until you choose "Use account".
-- OMP routing: saved Codex accounts are imported into OMP's `openai-codex`
-  credential pool so OMP load-balances GPT requests across them. Sign-out
-  and removal drop the account from OMP again. Toggle in the Accounts window.
+- Accounts window for Claude accounts: Meridian profiles and the default CLI
+  login. Add, sign in again, switch, sign out, and remove, all through the
+  official `meridian` and `claude` commands.
 - `--render-preview` also renders `accounts.png` and a light dropdown.
 
 ### Changed
@@ -35,12 +26,21 @@ All notable changes to MeridianBar. Format follows
   `seven_day_fable`. A missing selected window stays unknown rather than
   substituting another quota. Worst-window warning colors remain unchanged.
 - The dropdown is wider (420 pt) and scrolls; an Accounts… button opens the
-  new window. The app now talks to `chatgpt.com` for Codex quota in addition
-  to the loopback Meridian endpoint.
-- ChatGPT quota is fetched at most every 5 minutes (1 minute after a
-  failure) and the last good windows are shown in between; the Refresh
-  button forces a fetch. The endpoint is rate limited per IP and OMP polls
-  it too, which had produced intermittent "quota unavailable" banners.
+  new window.
+
+### Removed
+
+- Codex and OMP support: the Codex card, the `Codex NN%` bar segment, Codex
+  accounts, and OMP OpenAI routing. MeridianBar shows Claude only and talks
+  to nothing but the Meridian endpoint. These features never shipped in a
+  release. The app no longer reads or writes Codex logins. Earlier dev
+  builds saved copies under
+  `~/Library/Application Support/MeridianBar/CodexAccounts`; delete that
+  folder by hand if you no longer need it.
+- The five-hour limit from the weekly budget caption, which now reads
+  "Planning guide only. Model limits still apply." Max accounts no longer
+  report a five-hour window. A `five_hour` window still renders as `5h` if
+  Meridian returns one again.
 
 ### Fixed
 

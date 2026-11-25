@@ -36,7 +36,7 @@ enum PreviewRenderer {
             UsageMenuView(store: store), appearance: .aqua, to: dir.appendingPathComponent("dropdown-light.png"))
 
         // The label sits on a dark pill so it reads on any README theme.
-        let label = MenuBarLabel.render(segments: store.segments, offline: false, codex: store.codexSegment)
+        let label = MenuBarLabel.render(segments: store.segments, offline: false)
         let pill = NSImage(
             size: NSSize(width: label.size.width + 24, height: 30), flipped: false
         ) { rect in
@@ -92,22 +92,13 @@ enum PreviewRenderer {
         let quota = QuotaAll(profiles: [
             ProfileQuota(
                 id: "personal", error: nil, fetchedAt: now,
-                windows: [
-                    w("five_hour", 0.12, 3), w("seven_day", 0.48, 52),
-                    w("seven_day_fable", 0.34, 52),
-                ], extraUsage: nil),
+                windows: [w("seven_day", 0.48, 52), w("seven_day_fable", 0.34, 52)], extraUsage: nil),
             ProfileQuota(
                 id: "work", error: nil, fetchedAt: now,
-                windows: [
-                    w("five_hour", 0.05, 2), w("seven_day", 0.66, 30),
-                    w("seven_day_fable", 0.91, 30),
-                ], extraUsage: nil),
+                windows: [w("seven_day", 0.66, 30), w("seven_day_fable", 0.91, 30)], extraUsage: nil),
             ProfileQuota(
                 id: "team_eu", error: nil, fetchedAt: now,
-                windows: [
-                    w("five_hour", 0.4, 4), w("seven_day", 0.83, 61),
-                    w("seven_day_fable", 1.0, 61),
-                ], extraUsage: nil),
+                windows: [w("seven_day", 0.83, 61), w("seven_day_fable", 1.0, 61)], extraUsage: nil),
         ])
         let profiles = ProfilesList(
             profiles: [
@@ -132,19 +123,11 @@ enum PreviewRenderer {
             auth: HealthAuth(
                 loggedIn: true, email: nil, subscriptionType: "max",
                 renewalRequiredSoon: false, daysUntilRenewal: 30))
-        let codex = CodexUsageSnapshot(
-            email: "work@example.com", plan: "pro",
-            windows: [w("five_hour", 0.23, 2), w("seven_day", 0.61, 40)],
-            today: CodexTokenUsage(inputTokens: 1_240_000, cachedInputTokens: 980_000, outputTokens: 86_000, totalTokens: 1_326_000),
-            allTime: CodexTokenUsage(inputTokens: 48_000_000, cachedInputTokens: 39_000_000, outputTokens: 2_900_000, totalTokens: 50_900_000),
-            sessionCount: 212, lastActivity: Date(), quotaUpdatedAt: Date(), isLoggedIn: true)
         let accounts = [
-            ManagedAccount(id: "claude:profile:personal", name: "personal", provider: .claude, email: "personal@example.com", isLoggedIn: true),
-            ManagedAccount(id: "claude:profile:work", name: "work", provider: .claude, email: "work@example.com", isActive: true, isLoggedIn: true),
-            ManagedAccount(id: "claude:profile:team_eu", name: "team_eu", provider: .claude, email: "team@example.com", isLoggedIn: true),
-            ManagedAccount(id: "codex:saved:work", name: "work", provider: .codex, email: "work@example.com", isActive: true, isLoggedIn: true),
-            ManagedAccount(id: "codex:saved:personal", name: "personal", provider: .codex, email: "personal@example.com", isLoggedIn: false),
+            ManagedAccount(id: "claude:profile:personal", name: "personal", email: "personal@example.com", isLoggedIn: true),
+            ManagedAccount(id: "claude:profile:work", name: "work", email: "work@example.com", isActive: true, isLoggedIn: true),
+            ManagedAccount(id: "claude:profile:team_eu", name: "team_eu", email: "team@example.com", isLoggedIn: true),
         ]
-        return UsageStore(preview: quota, profiles: profiles, health: health, codex: codex, accounts: accounts)
+        return UsageStore(preview: quota, profiles: profiles, health: health, accounts: accounts)
     }
 }

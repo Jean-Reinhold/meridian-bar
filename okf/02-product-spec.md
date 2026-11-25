@@ -27,7 +27,7 @@ paul 62%↑ · rein 93%↓ · pnr 39%↑
   `↓` means usage is more than five points above it. Otherwise, `→` means
   on pace. Missing, expired, invalid, or cached data omits the arrow.
 - Color continues to reflect the worst quota window, so a weekly pacing
-  estimate cannot hide an exhausted five-hour or model-specific limit.
+  estimate cannot hide an exhausted model-specific limit.
 - **Thresholds** — Meridian's own, so both UIs
   agree: normal < 60% (primary label color), warn ≥ 60% (yellow),
   critical ≥ 85% (red). A profile listed in `exhausted[]` or with any
@@ -68,8 +68,8 @@ This guidance does not switch accounts or generate traffic.
 
 Body — one row per quota window, every window the API returns (dynamic,
 never a hardcoded set):
-- Window label from the shared label map (`5h`, `7d`, `7d Fable`, …) with
-  title-case fallback for unknown types.
+- Window label from the shared label map (`7d`, `7d Fable`, `7d Opus`, …)
+  with title-case fallback for unknown types.
 - Progress bar tinted by the same threshold colors as the bar label.
 - Percent + reset countdown: `91% · resets in 8h 05m`. A `rejected`
   window shows `blocked` in red next to the percent.
@@ -122,36 +122,20 @@ Never a crash, never a modal, never a notification unless F9 opted in.
   `05-features.md`).
 - ~~No management of Meridian itself (start/stop/login flows)~~ Superseded
   by owner decision 12 (`STATUS.md`): the Accounts window adds, signs in,
-  switches, signs out, and removes Claude and Codex accounts, always by
-  running the official CLIs. Starting or stopping the proxy is still out
-  of scope.
-- Network access: the loopback Meridian endpoint, plus one fixed HTTPS
-  endpoint (`chatgpt.com/backend-api/wham/usage`) for Codex quota,
-  authenticated with the token the Codex CLI already holds. No other
-  hosts; no credential ever leaves the machine except to that endpoint.
+  switches, signs out, and removes Claude accounts, always by running the
+  official CLIs. Starting or stopping the proxy is still out of scope.
+- Network access: the loopback Meridian endpoint only. No other hosts.
   Stated in the README.
 
-## 4a. Codex card and Accounts window (added 2026-09-07)
+## 4a. Accounts window (added 2026-09-07, Claude only since 2026-11-25)
 
-- The dropdown leads with an **OpenAI Codex** card: email + plan badge,
-  every ChatGPT rate-limit window as a bar with % and reset countdown,
-  then "Recorded on this Mac": today's tokens (input / cached input /
-  output), all-time total and session count. Cached input is a subset of
-  input. Local counts are consumption, never money.
-- The bar label appends `| Codex NN%` (worst Codex window) after the
-  Claude segments, colored by the same thresholds.
 - **Accounts…** opens a window listing Claude accounts (Meridian profiles
-  and the default CLI login) and Codex accounts (current CLI login and
-  app-saved copies) with ACTIVE / OMP / SIGN-IN REQUIRED badges. Actions
-  per row: Use account, Sign in (again), Sign out, Remove. A form adds a
-  named account and starts the browser sign-in. One operation runs at a
-  time; it can be cancelled.
-- **OMP routing** section: toggle (default on) that keeps OMP's
-  `openai-codex` pool equal to the Codex accounts saved here, a status
-  line (`OMP routes through N OpenAI accounts, M managed here`), and
-  Sync now. Removing or signing out an account also removes it from OMP.
-  Rows OMP got elsewhere are reported, never deleted.
-
+  and the default CLI login) with ACTIVE and SIGN-IN REQUIRED badges.
+  Actions per row: Use account, Sign in (again), Sign out, Remove. A form
+  adds a named Meridian profile and starts the browser sign-in. One
+  operation runs at a time; it can be cancelled.
+- The Codex card, the `| Codex NN%` bar segment, Codex accounts, and the
+  OMP routing section were removed on 2026-11-25.
 
 ## 5. Design language — Liquid Glass, system-first
 

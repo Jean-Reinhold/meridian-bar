@@ -8,22 +8,19 @@ core that is unit-testable without a running Meridian.
 
 ```
 Sources/MeridianBar/
-  MeridianBarApp.swift    — @main entry, MenuBarExtra + Accounts window scenes
+  MeridianBarApp.swift    — @main entry, MenuBarExtra + Settings scenes
   MeridianClient.swift    — URLSession + Codable bindings for the Meridian endpoints
-  CodexUsageClient.swift  — ChatGPT quota fetch + local session token parsing (actor)
-  AccountManager.swift    — Claude/Codex account listing and mutations via CLIs (actor)
-  OMPAccountSync.swift    — OMP openai-codex pool: read-only status, import/logout (actor)
+  AccountManager.swift    — Claude account listing and mutations via CLIs (actor)
   CLIProcess.swift        — argv-only subprocess runner, tool locator, bounded output
   UsageStore.swift        — @Observable state: merge, poll loop, offline flag,
                             account operations (one at a time)
   UsageLogic.swift        — pure functions: status classification, aliasing,
                             window labels, countdown/percent formatting
-  MenuBarLabel.swift      — NSImage renderer for the colored label (+ Codex segment)
+  MenuBarLabel.swift      — NSImage renderer for the colored label
   UsageMenuView.swift     — SwiftUI dropdown
-  CodexUsageCard.swift    — Codex quota + local consumption card
-  AccountsView.swift      — Accounts window (list, actions, OMP routing toggle)
-Tests/MeridianBarTests/   — decoding fixtures, UsageLogic, Codex parsing,
-                            AccountManager and OMP sync against scripted runners
+  AccountsView.swift      — Accounts window (list, actions, add form)
+Tests/MeridianBarTests/   — decoding fixtures, UsageLogic, AccountManager
+                            against scripted runners
 ```
 
 Dependency rule: `UsageLogic` imports Foundation only. Clients and the

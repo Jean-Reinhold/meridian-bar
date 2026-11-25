@@ -1,10 +1,31 @@
-# Status as of 2026-11-14
+# Status as of 2026-11-25
 
 Living log. Update on every meaningful state change; newest facts here win
 over older docs until those docs are revised.
 
 ## State
 
+- **2026-11-25 Claude only, no five-hour wording.** The owner asked for a
+  Claude-only app (decision 14). Removed the Codex card and client, the
+  `Codex NN%` bar segment, Codex accounts, and OMP routing. Deleted
+  `CodexUsageCard`, `CodexUsageClient`, `OMPAccountSync`, and their tests.
+  `AccountManager` lists Claude accounts only; `ManagedAccount` has no
+  provider field, and `CLITool` knows `claude` and `meridian`. The app now
+  talks only to the Meridian endpoint. A live poll of Meridian 1.90.0
+  returned only `seven_day` and `seven_day_fable` for all three profiles
+  (`okf/01`). The weekly budget caption now reads "Planning guide only.
+  Model limits still apply." Preview data and README screenshots dropped
+  `five_hour` and were regenerated with `--render-preview`. The `5h` label
+  stays in the map for tolerant decoding. Built with the macOS 26.5 SDK
+  and passed 41 tests. The Makefile now passes the Swift Testing plugin
+  path and strips File Provider attributes before signing and installing
+  (`okf/03`). `make install` replaced `/Applications/MeridianBar.app`, and
+  `codesign --verify --deep --strict` passed. A native screenshot showed
+  `paul 87% · rein 2%↑ F4% · pnr 3%↑` with three Claude profiles, no
+  Codex card, and the new caption in dark appearance. Light appearance
+  was not checked. Saved Codex copies from dev builds stay under
+  `~/Library/Application Support/MeridianBar/CodexAccounts` until the
+  owner deletes them.
 - **2026-11-14 Fable route display.** MeridianBar now reads the optional
   `GET model-router/routes` endpoint (`okf/01`) with the other polls. Any
   failure, including plain Meridian's 404, hides the feature and never
@@ -157,18 +178,16 @@ Confirmed with the project owner (2026-08-06):
 9. **No Apple affiliation, ever** — ad-hoc signing + sha256 + Sparkle
    EdDSA (`okf/06`). Final; do not re-raise.
 10. The app doubles as the **Meridian uptime monitor** (`okf/02`).
-11. **Codex consumption in the bar** (2026-09-07): account-wide ChatGPT
-    quota and local token counts, labeled as separate scopes; local
-    counts are never shown as money.
-12. **Account management from the bar** (2026-09-07): Claude and Codex
-    accounts, including multiple OpenAI accounts, with sign-in from the
-    bar. Official CLIs only; the app never talks to an OAuth token
-    endpoint itself. This supersedes the v1 "read-mostly" non-goal in
-    `okf/02` §4.
-13. **OMP GPT traffic goes through the saved Codex accounts**
-    (2026-09-07): OMP's `openai-codex` pool mirrors the accounts saved
-    here (default on, toggle in Accounts). Meridian stays Claude-only; OMP's
-    own pool is the OpenAI multiplexer.
+11. ~~**Codex consumption in the bar** (2026-09-07)~~ Superseded by 14.
+12. **Account management from the bar** (2026-09-07): Claude accounts
+    with sign-in from the bar (Codex accounts dropped by 14). Official
+    CLIs only; the app never talks to an OAuth token endpoint itself.
+    This supersedes the v1 "read-mostly" non-goal in `okf/02` §4.
+13. ~~**OMP GPT traffic goes through the saved Codex accounts**
+    (2026-09-07)~~ Superseded by 14.
+14. **Claude only** (2026-11-25): no Codex, ChatGPT, OpenAI, or OMP
+    features. The UI does not mention a five-hour limit, because Max
+    accounts no longer report one.
 
 ## Near-term queue (in order)
 

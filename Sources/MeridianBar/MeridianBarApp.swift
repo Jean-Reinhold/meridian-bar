@@ -16,8 +16,7 @@ struct MeridianBarApp: App {
             UsageMenuView(store: store)
         } label: {
             Image(nsImage: MenuBarLabel.render(
-                segments: store.segments, offline: store.offline, style: store.labelStyle,
-                codex: store.codexSegment
+                segments: store.segments, offline: store.offline, style: store.labelStyle
             ))
             .help("Claude \(UsageLogic.windowLabel(store.primaryWindow)) usage. Weekly arrows: ↑ room to use more, → on pace, ↓ ahead. Colors warn about the worst quota window.")
             .accessibilityLabel("Claude \(UsageLogic.windowLabel(store.primaryWindow)) usage. " + store.segments.map {

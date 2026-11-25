@@ -294,34 +294,6 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
     }
 }
 
-
-@Suite struct CodexSegments {
-    @Test func mainWindowLeadsButReviewLimitStillBlocks() {
-        let segment = UsageLogic.codexSegment(windows: [
-            QuotaWindow(type: "primary", utilization: 0.12),
-            QuotaWindow(type: "review", utilization: 1),
-        ])
-        #expect(segment.percent == 12)
-        #expect(segment.status == .blocked)
-    }
-
-    @Test func missingQuotaIsNotZeroUsage() {
-        #expect(UsageLogic.codexSegment(windows: []).percent == nil)
-        #expect(UsageLogic.codexSegment(windows: [
-            QuotaWindow(type: "primary", utilization: 0)
-        ]).percent == 0)
-    }
-
-    @Test func codexRemainsVisibleWhenMeridianIsOffline() {
-        let codex = UsageLogic.codexSegment(windows: [
-            QuotaWindow(type: "primary", utilization: 0.35)
-        ])
-        let text = MenuBarLabel.attributedText(segments: [], offline: true, codex: codex).string
-        #expect(text.contains("meridian"))
-        #expect(text.contains("Codex 35%"))
-    }
-}
-
 @Suite struct WeeklyBudget {
     let now = Date(timeIntervalSince1970: 1_800_000_000)
 

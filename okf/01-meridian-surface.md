@@ -47,6 +47,16 @@ Semantics that drive the UI:
 - Windows without a numeric `utilization` are skipped (Meridian's own UI
   filters the same way).
 
+### Max accounts report weekly windows only, verified 2026-11-25
+
+The payload above is the 2026-08-06 capture and stays as history. Since
+November 2026, Anthropic reports no five-hour window for these Max
+accounts. Anthropic returns it as null, and Meridian drops null windows.
+A live poll on 2026-11-25 (Meridian 1.90.0, three Max profiles) returned
+only `seven_day` and `seven_day_fable` for every profile. The UI makes no
+claim about a five-hour limit. The `five_hour` label stays in the map, so
+the window renders as `5h` if Anthropic reports it again.
+
 ### Window types (open set)
 
 Known labels, from Meridian's `WINDOW_LABELS` map (*verified 1.60.0*):
@@ -187,10 +197,13 @@ high**. MeridianBar uses the identical thresholds so both UIs always agree
   caveat.)
 - No talking to Anthropic directly — Meridian owns auth; we never see tokens.
 
-## Codex and account management, verified 2026-09-07
+## Account management, verified 2026-09-07
 
 The owner requested local Codex consumption and account management from the bar.
 This extends the original read-only, loopback-only scope.
+
+*Codex support was removed on 2026-11-25. The Meridian and Claude facts in
+this section still drive the Accounts window. The Codex facts are history.*
 
 - Live Meridian 1.60.0 still returns the documented health and profile fields.
 - Installed Meridian 1.60.0 implements `profile add <name>`,
@@ -216,9 +229,11 @@ use the fixed ChatGPT endpoint, never a user-supplied credential destination.
 Local Codex session usage is separate from account-wide quota. The UI must label
 these scopes separately and must not present local token counts as billed cost.
 
-## OMP OpenAI account pool, verified 2026-09-07
+## OMP OpenAI account pool, verified 2026-09-07 (removed 2026-11-25)
 
-The owner wants OMP's GPT traffic to use the Codex accounts saved in the bar.
+*History. MeridianBar no longer reads or writes OMP's pool.*
+
+The owner wanted OMP's GPT traffic to use the Codex accounts saved in the bar.
 OMP (`omp` 18.1.13, `@oh-my-pi/pi-ai` 17.4.0) keeps one credential pool per
 provider and load-balances requests across every `openai-codex` row.
 

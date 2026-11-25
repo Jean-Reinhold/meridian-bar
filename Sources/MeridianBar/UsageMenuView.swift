@@ -38,7 +38,6 @@ struct UsageMenuView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CodexUsageCard(snapshot: store.codex, ompPoolCount: store.omp.isManageable ? store.omp.entries.count : nil)
             Text("Claude · Meridian").font(.headline)
             Text("7d pace: ↑ room to use more · → on pace · ↓ ahead")
                 .font(.caption)
@@ -115,7 +114,7 @@ struct UsageMenuView: View {
                     }
                 }
             HStack {
-                Button("Refresh") { Task { await store.refresh(forceCodexQuota: true) } }
+                Button("Refresh") { Task { await store.refresh() } }
                 Button("Dashboard") {
                     NSWorkspace.shared.open(MeridianClient.configured().baseURL)
                 }
@@ -225,7 +224,7 @@ struct AccountCard: View {
                                 .font(.caption2)
                                 .foregroundStyle(.orange)
                         }
-                        Text("Planning guide only. Five-hour and model limits still apply.")
+                        Text("Planning guide only. Model limits still apply.")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

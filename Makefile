@@ -9,7 +9,9 @@ DEV_DIR := $(shell xcode-select -p 2>/dev/null)
 ifeq ($(DEV_DIR),/Library/Developer/CommandLineTools)
 CLT_FRAMEWORKS = /Library/Developer/CommandLineTools/Library/Developer/Frameworks
 CLT_TESTLIB    = /Library/Developer/CommandLineTools/Library/Developer/usr/lib
+CLT_PLUGINS    = /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing
 TEST_FLAGS = -Xswiftc -F -Xswiftc $(CLT_FRAMEWORKS) \
+             -Xswiftc -plugin-path -Xswiftc $(CLT_PLUGINS) \
              -Xlinker -F -Xlinker $(CLT_FRAMEWORKS) \
              -Xlinker -rpath -Xlinker $(CLT_FRAMEWORKS) \
              -Xlinker -rpath -Xlinker $(CLT_TESTLIB)
@@ -31,6 +33,7 @@ app: build
 	@FW=$$(find .build -type d -name Sparkle.framework -path '*macos*' | head -1); \
 	if [ -n "$$FW" ]; then \
 	  cp -R "$$FW" $(APP)/Contents/Frameworks/; \
+	  xattr -cr $(APP)/Contents/Frameworks/Sparkle.framework; \
 	  codesign --force -s - $(APP)/Contents/Frameworks/Sparkle.framework; \
 	else echo "warning: Sparkle.framework not found in .build — updater will be dead"; fi
 	sed 's/__VERSION__/$(VERSION)/g' Support/Info.plist > $(APP)/Contents/Info.plist
@@ -41,7 +44,7 @@ run: app
 
 install: app
 	rm -rf /Applications/MeridianBar.app
-	cp -R $(APP) /Applications/MeridianBar.app
+	ditto --noextattr --norsrc $(APP) /Applications/MeridianBar.app
 	open /Applications/MeridianBar.app
 
 uninstall:
