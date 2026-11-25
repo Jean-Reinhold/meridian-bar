@@ -93,7 +93,10 @@ enum MenuBarLabel {
             ]
             if seg.isActive { attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue }
             let number = seg.needsLogin ? "login" : value(for: seg)
-            out.append(NSAttributedString(string: "\(seg.alias) \(number)", attributes: attrs))
+            // The Fable route gets its own weekly Fable quota, e.g. "rein 34%→ F67%".
+            let fable = seg.servesFable && !seg.needsLogin
+                ? " F" + (seg.fablePercent.map { "\($0)%" } ?? "–") : ""
+            out.append(NSAttributedString(string: "\(seg.alias) \(number)\(fable)", attributes: attrs))
         }
         return out
     }

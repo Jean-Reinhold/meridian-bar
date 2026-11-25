@@ -13,6 +13,7 @@ JSON in both directions.
 | `GET /profiles/list` | Profile identity: active, routing, exhausted, auth status | 60 s + on menu open |
 | `GET /health` | Proxy liveness, version, active-profile token state | 60 s |
 | `POST /profiles/active` | Switch the active profile (menu action) | on demand |
+| `GET /model-router/routes` | Optional: which profile serves Fable requests (model router only) | 60 s |
 
 ## `GET /v1/usage/quota/all`
 
@@ -135,6 +136,33 @@ priority pool; takes effect immediately (read per request), persists to
 traffic. Rotation (failover down the order) fires only when a response is
 classified `rate_limit_error`; per-session assignments are sticky
 (in-memory, cleared on restart).
+
+## `GET /model-router/routes` (optional, model router only)
+
+A local model router can sit in front of Meridian at the same base URL. It
+proxies every Meridian path unchanged and adds this endpoint. It pins Fable
+requests to one profile and leaves other requests on Meridian's active
+profile.
+
+```jsonc
+{
+  "fable": "<profile id>",   // serves Fable requests; null when no decision
+  "general": "<profile id>", // last made active for other requests; null when none
+  "decidedAt": 1794647062006 // epoch ms of the last decision; null when none
+}
+```
+
+Plain Meridian answers 404 with `{"error":{"type":"not_found",...}}`
+(*verified live 2026-11-14, Meridian 1.88.0*). The router on port 3457
+answered 200 with
+`{"fable":"jean_reinhold","general":"jean_reinhold","decidedAt":1794647286053}`
+(*verified live 2026-11-14*).
+
+MeridianBar polls it alongside the core requests and treats any failure as
+"no route information". It never counts toward the offline state. When
+`fable` is set, that profile's card gets a FABLE badge and its bar segment
+gets an `F<percent>%` suffix from its `seven_day_fable` window. `general`
+and `decidedAt` are decoded but not shown.
 
 ## Thresholds (shared with Meridian's UI)
 

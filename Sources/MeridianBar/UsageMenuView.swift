@@ -43,6 +43,12 @@ struct UsageMenuView: View {
             Text("7d pace: ↑ room to use more · → on pace · ↓ ahead")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            if let fable = store.modelRoutes?.fable {
+                let alias = store.segments.first { $0.id == fable }?.alias ?? fable
+                Text("Fable requests use \(alias). Other requests use the active account.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             if let banner = offlineBanner {
                 Label(banner, systemImage: "bolt.slash.fill")
                     .font(.callout)
@@ -180,6 +186,7 @@ struct AccountCard: View {
                 Text(segment.alias).font(.headline)
                 Text(segment.id).font(.caption.monospaced()).foregroundStyle(.secondary)
                 if segment.isActive { Badge(text: "ACTIVE", color: .blue) }
+                if segment.servesFable { Badge(text: "FABLE", color: .purple) }
                 if let plan = info?.subscriptionType { Badge(text: plan, color: .gray) }
                 if store.profiles?.exhausted?.contains(where: { $0.id == segment.id }) == true {
                     Badge(text: "EXHAUSTED", color: .red)

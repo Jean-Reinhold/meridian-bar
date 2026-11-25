@@ -181,6 +181,54 @@ private func decodeFixtures() throws -> (QuotaAll, ProfilesList) {
     }
 }
 
+@Suite struct FableRoute {
+    @Test func marksOnlyTheFableRouteWithItsFablePercent() throws {
+        let (quota, profiles) = try decodeFixtures()
+        let segs = UsageLogic.segments(
+            quota: quota, profiles: profiles, primaryWindow: "seven_day", fableProfile: "jean_reinhold")
+        let byId = Dictionary(uniqueKeysWithValues: segs.map { ($0.id, $0) })
+        #expect(byId["jean_reinhold"]?.servesFable == true)
+        #expect(byId["jean_reinhold"]?.fablePercent == 34)
+        // The primary window still drives the main percent.
+        #expect(byId["jean_reinhold"]?.percent == 32)
+        #expect(segs.filter(\.servesFable).map(\.id) == ["jean_reinhold"])
+        #expect(byId["jeanpaul"]?.fablePercent == nil)
+    }
+
+    @Test func missingFableWindowLeavesPercentUnknown() throws {
+        let quota = QuotaAll(profiles: [
+            ProfileQuota(id: "work", windows: [QuotaWindow(type: "seven_day", utilization: 0.2)])
+        ])
+        let segment = try #require(
+            UsageLogic.segments(quota: quota, profiles: nil, fableProfile: "work").first)
+        #expect(segment.servesFable)
+        #expect(segment.fablePercent == nil)
+        #expect(MenuBarLabel.attributedText(segments: [segment], offline: false).string.hasSuffix(" F–"))
+    }
+
+    @Test func noRouteMarksNothing() throws {
+        let (quota, profiles) = try decodeFixtures()
+        let segs = UsageLogic.segments(quota: quota, profiles: profiles, fableProfile: nil)
+        #expect(segs.allSatisfy { !$0.servesFable && $0.fablePercent == nil })
+    }
+
+    @Test func labelShowsFableSuffixOnlyInSegmentsStyle() throws {
+        let quota = QuotaAll(profiles: [
+            ProfileQuota(id: "work", windows: [
+                QuotaWindow(type: "seven_day", utilization: 0.34),
+                QuotaWindow(type: "seven_day_fable", utilization: 0.67),
+            ])
+        ])
+        let segments = UsageLogic.segments(quota: quota, profiles: nil, fableProfile: "work")
+        let label = MenuBarLabel.attributedText(segments: segments, offline: false).string
+        #expect(label.contains("work 34%"))
+        #expect(label.hasSuffix(" F67%"))
+        let worst = MenuBarLabel.attributedText(segments: segments, offline: false, style: .worst).string
+        #expect(!worst.contains("F67%"))
+        #expect(worst == "work 34%")
+    }
+}
+
 @Suite struct ExhaustedDecoding {
     // Meridian 1.60.0 sends objects; captures ≤2026-08-06 sent bare id
     // strings (okf/01) — both must decode.

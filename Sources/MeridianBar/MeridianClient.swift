@@ -91,6 +91,17 @@ struct Health: Codable, Equatable, Sendable {
     var auth: HealthAuth?
 }
 
+/// Route decision from the optional model router in front of Meridian
+/// (okf/01). Plain Meridian answers 404, which callers treat as "no route".
+struct ModelRoutes: Codable, Equatable, Sendable {
+    /// Profile id that serves Fable requests.
+    var fable: String?
+    /// Profile id the router last made active for other requests.
+    var general: String?
+    /// Epoch ms of the last decision.
+    var decidedAt: Double?
+}
+
 enum MeridianError: Error {
     case badStatus(Int)
 }
@@ -118,6 +129,7 @@ struct MeridianClient: Sendable {
     func quotaAll() async throws -> QuotaAll { try await get("v1/usage/quota/all") }
     func profilesList() async throws -> ProfilesList { try await get("profiles/list") }
     func health() async throws -> Health { try await get("health") }
+    func modelRoutes() async throws -> ModelRoutes { try await get("model-router/routes") }
 
     func switchProfile(_ id: String) async throws {
         var req = URLRequest(url: baseURL.appendingPathComponent("profiles/active"))

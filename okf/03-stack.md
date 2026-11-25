@@ -68,6 +68,24 @@ value is being *invisible* when not looked at — footprint is the product.
   `make app` + `swift test` path as local, so local CLT is the constraining
   environment by design.
 
+### SDK selection on this host, verified 2026-09-28
+
+Command Line Tools 27.0 provides Swift 6.4 and selects the macOS 27.0 SDK
+by default. Building this app with that default fails because the
+`SwiftUIMacros.StateMacro` plugin is unavailable.
+
+The installed macOS 26.5 SDK works with the same compiler. These commands
+successfully assembled the signed app bundle and passed all 80 tests:
+
+```bash
+make app SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
+make test SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
+```
+
+This explicit SDK selection leaves the system SDK and SwiftUI source unchanged.
+`make run` opens the build in `dist`; it does not update `/Applications`.
+Quit the installed app before replacing its bundle.
+
 ## Concurrency model
 
 Swift 6 strict concurrency on. One `@MainActor @Observable` store; the

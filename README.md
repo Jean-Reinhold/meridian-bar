@@ -64,6 +64,9 @@ with `git submodule update --remote tap`.
   Colors still warn about the worst quota window. The active profile is
   underlined. A `Codex NN%` segment follows when Codex is signed in.
   If Meridian is unavailable, its segments become a gray offline marker.
+  When the base URL points at a model router, the account that serves Fable
+  requests gets an `F<percent>%` suffix with its weekly Fable usage, for
+  example `rein 34%→ F67%`, and a FABLE badge on its card.
 - Weekly pace arrows compare usage with elapsed time in the seven-day
   window. `↑` means room to use more, `→` means within five percentage
   points of an even pace, and `↓` means ahead of pace. Cached quota

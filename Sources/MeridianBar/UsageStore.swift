@@ -11,6 +11,8 @@ final class UsageStore {
     private(set) var quota: QuotaAll?
     private(set) var profiles: ProfilesList?
     private(set) var health: Health?
+    /// Fable route from the model router; nil on plain Meridian or any failure.
+    private(set) var modelRoutes: ModelRoutes?
     private(set) var lastSuccess: Date?
     private(set) var offline = true
     private(set) var switchError: String?
@@ -43,7 +45,8 @@ final class UsageStore {
     /// Staged store for `--render-preview` (docs screenshots) — never polls.
     init(
         preview quota: QuotaAll, profiles: ProfilesList, health: Health?,
-        codex: CodexUsageSnapshot = .init(), accounts: [ManagedAccount] = []
+        codex: CodexUsageSnapshot = .init(), accounts: [ManagedAccount] = [],
+        modelRoutes: ModelRoutes? = nil
     ) {
         isPreview = true
         self.quota = quota
@@ -53,6 +56,7 @@ final class UsageStore {
         self.offline = false
         self.codex = codex
         self.accounts = accounts
+        self.modelRoutes = modelRoutes
     }
 
     var pollInterval: TimeInterval {
@@ -77,7 +81,8 @@ final class UsageStore {
     var segments: [ProfileSegment] {
         UsageLogic.segments(
             quota: quota, profiles: profiles,
-            primaryWindow: primaryWindow, aliasOverrides: Self.aliasOverrides()
+            primaryWindow: primaryWindow, aliasOverrides: Self.aliasOverrides(),
+            fableProfile: modelRoutes?.fable
         )
     }
 
@@ -189,6 +194,7 @@ final class UsageStore {
         async let quotaReq = client.quotaAll()
         async let profilesReq = client.profilesList()
         async let healthReq = client.health()
+        async let routesReq = client.modelRoutes()
         do {
             let (q, p) = try await (quotaReq, profilesReq)
             quota = q
@@ -201,8 +207,10 @@ final class UsageStore {
             misses += 1
             if misses >= 2 { offline = true }
         }
-        // Health is best-effort garnish; its failure must not mark us offline.
+        // Health and routes are best-effort garnish; their failure must not
+        // mark us offline. Plain Meridian answers 404 for routes.
         health = try? await healthReq
+        modelRoutes = try? await routesReq
     }
 
     func switchProfile(to id: String) async {

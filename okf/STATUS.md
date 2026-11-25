@@ -1,10 +1,25 @@
-# Status as of 2026-10-01
+# Status as of 2026-11-14
 
 Living log. Update on every meaningful state change; newest facts here win
 over older docs until those docs are revised.
 
 ## State
 
+- **2026-11-14 Fable route display.** MeridianBar now reads the optional
+  `GET model-router/routes` endpoint (`okf/01`) with the other polls. Any
+  failure, including plain Meridian's 404, hides the feature and never
+  marks the app offline. `UsageLogic.segments` takes the Fable profile and
+  sets `servesFable` and `fablePercent` from its `seven_day_fable` window.
+  The `segments` label style appends ` F<percent>%` (or ` F–`) to that
+  account; `dots` and `worst` are unchanged. Its card shows a FABLE badge,
+  and a caption names the Fable account. New tests cover the marking, a
+  missing Fable window, no route, and the label suffix. Plain Meridian
+  1.88.0 answered 404 live on 2026-11-14 and the router on port 3457
+  answered 200. Built with the macOS 26.5 SDK and passed 86 tests.
+  Installed and relaunched `/Applications/MeridianBar.app` with `baseURL`
+  set to `http://127.0.0.1:3457`. A native screenshot showed
+  `rein 35%↑ F68% · paul 0%↑`, the FABLE badge, and the route caption in
+  dark appearance. Light appearance was not checked.
 - **2026-10-01 weekly usage and pacing.** Changed the primary Claude
   percentage from Fable to overall seven-day usage. Added pace arrows,
   unused quota, reset countdown, and remaining daily or hourly budgets.
@@ -14,6 +29,19 @@ over older docs until those docs are revised.
   Native screenshots and accessibility inspection confirmed the weekly
   numbers, arrows, hourly budget, daily budgets, and cached-data warnings.
   Routing and quota limits were not changed.
+- **2026-09-28 installed-app repair.** The owner requested an update and
+  repair of the broken menu bar app. `/Applications/MeridianBar.app` still
+  contained the older September 7 build, not the source's popover fix.
+  Its live dropdown measured 420 × 107 pixels and hid the usage cards.
+  Rebuilt the current source with Swift 6.4 and the installed macOS 26.5
+  SDK, passed all 80 tests, replaced the installed bundle, and relaunched it.
+  Code-signature verification passed. A live screenshot and accessibility
+  inspection confirmed a 420 × 719 dropdown with usage bars, reset times,
+  a sign-in explanation, and the Meridian 1.77.1 operational footer.
+  The menu bar now shows `login` for the signed-out profile.
+  Verification used the current dark appearance; light appearance was
+  not checked during this installation repair. No app source change was needed.
+  See `03-stack.md` for the SDK selection required on this host.
 - **2026-09-07 popover fix, 80/80 tests passed:** the scroll view had only
   a maximum height, so `MenuBarExtra` could collapse it. A fixed 610 pt
   viewport keeps account cards visible and scrollable. Live Meridian

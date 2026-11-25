@@ -7,6 +7,10 @@ All notable changes to MeridianBar. Format follows
 
 ### Added
 
+- Fable route display. When the base URL points at a model router, the bar
+  marks the account that serves Fable requests with an `F<percent>%` suffix
+  showing its weekly Fable usage. Its card gets a FABLE badge, and the
+  dropdown names the Fable account. Plain Meridian shows no change.
 - Weekly subscription pacing from overall seven-day usage and time until reset.
   Menu bar arrows show room to use more, an even pace, or usage ahead of pace.
   Account cards show unused quota, reset time, and a daily or hourly budget.

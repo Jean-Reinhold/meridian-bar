@@ -24,6 +24,10 @@ struct ProfileSegment: Equatable, Sendable {
     var isActive: Bool
     var needsLogin = false
     var weeklyPace: WeeklyPace?
+    /// True when the model router sends Fable requests to this profile.
+    var servesFable = false
+    /// `seven_day_fable` utilization percent, set only when `servesFable`.
+    var fablePercent: Int?
 }
 
 struct WeeklyPace: Equatable, Sendable {
@@ -166,11 +170,14 @@ enum UsageLogic {
 
     /// Keep Meridian's profile order and worst-window warning colors.
     /// Missing primary-window data stays unknown instead of showing another quota.
+    /// `fableProfile` is the model router's Fable route; that segment also
+    /// carries its `seven_day_fable` percent.
     static func segments(
         quota: QuotaAll?,
         profiles: ProfilesList?,
         primaryWindow: String = defaultPrimaryWindow,
         aliasOverrides: [String: String] = [:],
+        fableProfile: String? = nil,
         now: Date = Date()
     ) -> [ProfileSegment] {
         let quotaById = Dictionary(
@@ -193,6 +200,7 @@ enum UsageLogic {
             var worstStatus = windows.map { status(utilization: $0.utilization) }.max()
                 ?? UsageStatus.ok
             if exhausted.contains(id) { worstStatus = .blocked }
+            let servesFable = id == fableProfile
             return ProfileSegment(
                 id: id,
                 alias: aliasMap[id] ?? String(id.prefix(4)),
@@ -202,7 +210,10 @@ enum UsageLogic {
                 needsLogin: quotaById[id]?.error == "no_token" || signedOut.contains(id),
                 weeklyPace: primaryWindow == "seven_day" && quotaById[id]?.error == nil
                     && quotaById[id]?.stale != true && !signedOut.contains(id)
-                    ? weeklyPace(windows: windows, now: now) : nil
+                    ? weeklyPace(windows: windows, now: now) : nil,
+                servesFable: servesFable,
+                fablePercent: servesFable
+                    ? percent(windows.first { $0.type == "seven_day_fable" }?.utilization) : nil
             )
         }
     }
